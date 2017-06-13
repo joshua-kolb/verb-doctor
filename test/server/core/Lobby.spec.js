@@ -44,7 +44,7 @@ describe('core lobby logic', function () {
 			});
 			const nextState = Lobby.login(state, exampleLonePlayer);
 			expect(nextState).to.equal(Map({
-				players: List.of(...examplePlayers, exampleLonePlayer)
+				players: examplePlayers.push(exampleLonePlayer)
 			}));
 		});
 
