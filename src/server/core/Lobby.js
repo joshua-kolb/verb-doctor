@@ -7,30 +7,30 @@ export default class Lobby {
 	}
 
 	static login(state, player) {
-		if (!state.has('players')) {
-			return state.set('players', List.of(player));
+		if (!state.has('lobby')) {
+			return state.set('lobby', List.of(player));
 		}
 
-		if (state.get('players').includes(player)) {
+		if (state.get('lobby').includes(player)) {
 			// don't allow duplicate player logins.
 			return state;
 		}
 		
-		return state.update('players', (players) => players.push(player));
+		return state.update('lobby', (lobby) => lobby.push(player));
 	}
 
 	static logout(state, player) {
-		const playerIndex = state.get('players').indexOf(player);
+		const playerIndex = state.get('lobby').indexOf(player);
 
 		if (playerIndex === -1) {
 			return state;
 		}
 
-		if (state.get('players').size === 1) {
-			return state.remove('players');
+		if (state.get('lobby').size === 1) {
+			return state.remove('lobby');
 		}
 
-		return state.update('players', (players) => players.delete(playerIndex));
+		return state.update('lobby', (lobby) => lobby.delete(playerIndex));
 	}
 
 }

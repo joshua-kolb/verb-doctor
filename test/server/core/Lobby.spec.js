@@ -31,26 +31,26 @@ describe('core lobby logic', function () {
 
 	describe('login', function () {
 
-		it('creates the players state and adds a player to it', function () {
+		it('creates the lobby state and adds a player to it', function () {
 			const nextState = Lobby.login(emptyState, exampleLonePlayer);
 			expect(nextState).to.equal(Map({
-				players: List.of(exampleLonePlayer)
+				lobby: List.of(exampleLonePlayer)
 			}));
 		});
 
-		it('adds a player to the existing players state', function () {
+		it('adds a player to the existing lobby state', function () {
 			const state = Map({
-				players: examplePlayers
+				lobby: examplePlayers
 			});
 			const nextState = Lobby.login(state, exampleLonePlayer);
 			expect(nextState).to.equal(Map({
-				players: examplePlayers.push(exampleLonePlayer)
+				lobby: examplePlayers.push(exampleLonePlayer)
 			}));
 		});
 
 		it('doesn\'t allow duplicate player login names', function () {
 			const state = Map({
-				players: List.of(exampleLonePlayer)
+				lobby: List.of(exampleLonePlayer)
 			});
 			const nextState = Lobby.login(state, exampleLonePlayer);
 			expect(nextState).to.equal(state);
@@ -60,19 +60,19 @@ describe('core lobby logic', function () {
 
 	describe('logout', function() {
 
-		it('removes the player from the players state', function () {
+		it('removes the player from the lobby state', function () {
 			const state = Map({
-				players: List.of(...examplePlayers, exampleLonePlayer)
+				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Lobby.logout(state, exampleLonePlayer);
 			expect(nextState).to.equal(Map({
-				players: examplePlayers
+				lobby: examplePlayers
 			}));
 		});
 
-		it('removes the players state when removing the last player', function () {
+		it('removes the lobby state when removing the last player', function () {
 			const state = Map({
-				players: List.of(exampleLonePlayer)
+				lobby: List.of(exampleLonePlayer)
 			});
 			const nextState = Lobby.logout(state, exampleLonePlayer);
 			expect(nextState).to.equal(emptyState);
@@ -80,7 +80,7 @@ describe('core lobby logic', function () {
 
 		it('doesn\'t do anything if the player isn\'t in the state', function () {
 			const state = Map({
-				players: examplePlayers
+				lobby: examplePlayers
 			});
 			const nextState = Lobby.logout(state, exampleLonePlayer);
 			expect(nextState).to.equal(state);
