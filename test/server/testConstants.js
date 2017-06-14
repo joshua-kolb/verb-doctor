@@ -1,6 +1,9 @@
 import {List, Map, fromJS} from 'immutable';
 
-export const plainJSExampleCards = [{
+export const emptyState = Map();
+export const expectedNounsInHand = 4;
+export const expectedVerbsInHand = 4;
+export const plainJSExampleNouns = [{
 	type: 'noun',
 	text: 'wonder paste',
 	slots: []
@@ -24,8 +27,8 @@ export const plainJSExampleCards = [{
 	type: 'noun',
 	text: 'a paranormal bromance',
 	slots: []
-},
-{
+}];
+export const plainJSExampleVerbs = [{
 	type: 'verb',
 	text: 'waking up []',
 	slots: ['noun']
@@ -49,8 +52,8 @@ export const plainJSExampleCards = [{
 	type: 'verb',
 	text: 'hoofing it to your next destination because your car won\'t start',
 	slots: []
-},
-{
+}];
+export const plainJSExampleSituations = [{
 	type: 'situation',
 	text: 'Give fuel, give me fire! Give me []',
 	slots: ['noun']
@@ -75,7 +78,54 @@ export const plainJSExampleCards = [{
 	text: 'The department of Quality Services regrets to inform you that your request for [] has been approved.',
 	slots: ['any']
 }];
-export const emptyState = Map();
+export const plainJSExampleCards = [...plainJSExampleNouns, ...plainJSExampleVerbs, ...plainJSExampleSituations];
+export const plainJSExampleHand = [...(plainJSExampleNouns.slice(0, expectedNounsInHand)), ...(plainJSExampleVerbs.slice(0, expectedVerbsInHand))];
+export const exampleHand = fromJS(plainJSExampleHand);
 export const exampleCards = fromJS(plainJSExampleCards);
 export const exampleLonePlayer = 'LoneWolf1';
-export const examplePlayers = List.of('player1', 'player2');
+export const exampleDifferentLonePlayer = 'AnotherLoneWolf';
+export const examplePlayers = List.of('player1', 'player2'); // Must be length of at least 2.
+export const exampleNewGame = fromJS({
+	name: 'Epicus',
+	started: false,
+	host: 'EpicHost',
+	players: {
+		EpicHost: {}
+	}
+});
+export const exampleNewGameWithPassword = fromJS({
+	name: 'Secret Stuff',
+	started: false,
+	host: 'SecretHost',
+	players: {
+		SecretHost: {}
+	},
+	password: 'secret'
+});
+export const exampleStartedGame = fromJS({
+	name: 'Getting Started',
+	started: true,
+	host: 'selfStarter',
+	decider: 'duoStarter',
+	winnerOfLastRound: 'duoStarter',
+	currentSituation: plainJSExampleSituations[0],
+	players: {
+		selfStarter: {
+			score: 0,
+			cards: plainJSExampleHand
+		},
+		duoStarter: {
+			score: 0,
+			cards: plainJSExampleHand
+		}
+	},
+	submittedPlays: [{
+		player: 'selfStarter',
+		'cardsSubmitted': [plainJSExampleNouns[0]]
+	}],
+	decks: {
+		noun: plainJSExampleNouns,
+		verb: plainJSExampleVerbs,
+		situation: plainJSExampleSituations
+	}
+});

@@ -77,30 +77,23 @@
 				"slots": []
 			}]
 		}],
-		"decks": [{
-			"type": "noun",
-			"cards": [{
+		"decks": {
+			"noun": [{
 				"type": "noun",
 				"text": "wonder paste",
 				"slots": []
-			}]
-		},
-		{
-			"type": "verb",
-			"cards": []
-		},
-		{
-			"type": "situation",
-			"cards": [{
+			}],
+			"verb":  [],
+			"situation": [{
 				"type": "situation",
 				"text": "No one really knows the origin of []. It's probably because something started []",
 				"slots": ["noun", "verb"]
 			}]
-		}]
+		}
 	}],
-	"players": [
-		"player1",
-		"player2",
-		"player3"
+	"lobby": [
+		"otherPlayer1",
+		"otherPlayer2",
+		"otherPlayer3"
 	]
 }
