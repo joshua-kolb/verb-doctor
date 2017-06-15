@@ -2,10 +2,14 @@ import {expect} from 'chai';
 import {List, Map, fromJS} from 'immutable';
 import {
 	emptyState,
+	randomizeTries,
+	exampleCards,
+	exampleCardsByType,
 	examplePlayers,
 	exampleLonePlayer,
 	exampleNewGame,
 	exampleNewGameWithPassword,
+	exampleNewGameReadyToStart,
 	exampleStartedGame
 } from '../testConstants'
 import Game from '../../../src/server/core/Game';
@@ -153,31 +157,128 @@ describe('core game logic', function () {
 	describe('start', function () {
 
 		it('sets started to true in the game state', function () {
-
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			expect(nextState.getIn('games', 0, 'started')).to.equal(true);
 		});
 
 		it('initializes the game decks', function () {
-
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			const decks = nextState.getIn('games', 0, 'decks');
+			expect(exampleCards.every((card) => decks.get(card.get('type')).includes(card))).to.equal(true);
 		});
 
 		it('initializes the game decks as shuffled', function () {
-
+			let randomized = false;
+			for(let i = 0; i < randomizeTries; ++i) {
+				const state = Map({
+					cards: exampleCards,
+					games: List.of(exampleNewGameReadyToStart)
+				});
+				const nextState = Game.start(
+					state, 
+					exampleNewGameReadyToStart.get('host'), 
+					exampleNewGameReadyToStart.get('name')
+				);
+				randomized = nextState.getIn('games', 0, 'decks').every(
+					(deck, decktype) => deck !== exampleCardsByType.get(decktype)
+				);
+				if (randomized) {
+					break;
+				}
+			}
+			expect(randomized).to.equal(true);
 		});
 
-		it('deals cards into each of the players\' hands', function () {
-
+		it('deals cards into each of the players\' hands from the decks', function () {
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			const game = nextState.getIn('games', 0);
+			const cardsMatchUp =  game.get('players').every(
+				(player, playerName) => player.get('cards').every(
+					(cards, cardType) => exampleCardsByType.has(cardType) && cards.every(
+						(card) => exampleCardsByType.get(cardType).includes(card)
+						          && !game.getIn('decks', cardType).includes(card)
+					)
+				)
+			);
+			expect(cardsMatchUp).to.equal(true);
 		});
 
-		it('sets the currentSituation in the game state', function () {
+		it('sets each players\' score to 0', function () {
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			const AllScoresAreZero = nextState.getIn('games', 0, 'players').every(
+				(player, playerName) => player.get('score') === 0
+			);
+			expect(AllScoresAreZero).to.equal(true);
+		});
 
+		it('sets the currentSituation in the game state by dealing it from the situation deck', function () {
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			const game = nextState.getIn('games', 0);
+			const currentSituation =  game.get('currentSituation');
+			expect(currentSituation).to.not.be.undefined;
+			expect(game.getIn('decks', 'situation').includes(currentSituation)).to.equal(false);
 		});
 
 		it('doesn\'t start the game if there is only one player', function () {
-
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGame)
+			});
+			const nextState = Game.start(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
+			expect(nextState).to.equal(state);
 		});
 
 		it('only allows the host to start the game', function () {
-
+			const state = Map({
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.getIn('players', 1), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			expect(nextState).to.equal(state);
 		});
 
 	});

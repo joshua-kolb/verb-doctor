@@ -34,29 +34,33 @@
 		"players": {
 			"player1": {
 				"score": 0,
-				"cards": [{
-					"type": "noun",
-					"text": "wonder paste",
-					"slots": []
-				},
-				{
-					"type": "noun",
-					"text": "an interesting item",
-					"slots": []
-				}]
+				"cards": {
+					"noun": [{
+						"type": "noun",
+						"text": "wonder paste",
+						"slots": []
+					},
+					{
+						"type": "noun",
+						"text": "an interesting item",
+						"slots": []
+					}]
+				}
 			},
 			"player2": {
 				"score": 1,
-				"cards": [{
-					"type": "noun",
-					"text": "wonder paste",
-					"slots": []
-				},
-				{
-					"type": "verb",
-					"text": "waking up []",
-					"slots": ["noun"]
-				}]
+				"cards": {
+					"noun": [{
+						"type": "noun",
+						"text": "wonder paste",
+						"slots": []
+					}],
+					"verb": [{
+						"type": "verb",
+						"text": "waking up []",
+						"slots": ["noun"]
+					}]
+				}
 			}
 		},
 		"submittedPlays": [{
