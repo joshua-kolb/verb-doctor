@@ -34,7 +34,7 @@
 		"players": {
 			"player1": {
 				"score": 0,
-				"cards": {
+				"hand": {
 					"noun": [{
 						"type": "noun",
 						"text": "wonder paste",
@@ -49,7 +49,7 @@
 			},
 			"player2": {
 				"score": 1,
-				"cards": {
+				"hand": {
 					"noun": [{
 						"type": "noun",
 						"text": "wonder paste",

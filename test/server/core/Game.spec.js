@@ -7,6 +7,8 @@ import {
 	exampleCardsByType,
 	examplePlayers,
 	exampleLonePlayer,
+	expectedNounsInHand,
+	expectedVerbsInHand,
 	exampleNewGame,
 	exampleNewGameWithPassword,
 	exampleNewGameReadyToStart,
@@ -29,7 +31,7 @@ describe('core game logic', function () {
 		it('adds a new game to the existing game state', function () {
 			const state = Map({
 				games: List.of(exampleNewGameWithPassword),
-				lobby: List.of(exampleNewGame.host)
+				lobby: List.of(exampleNewGame.get('host'))
 			});
 			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
 			expect(nextState.get('games')).to.equal(state.get('games').push(exampleNewGame));
@@ -92,7 +94,7 @@ describe('core game logic', function () {
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleNewGame.get('name'));
-			expect(nextState.getIn('games', 0, 'players').has(exampleLonePlayer)).to.equal(true);
+			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
 		});
 
@@ -107,7 +109,7 @@ describe('core game logic', function () {
 				exampleNewGameWithPassword.get('name'), 
 				exampleNewGameWithPassword.get('password')
 			);
-			expect(nextState.getIn('games', 0, 'players').has(exampleLonePlayer)).to.equal(true);
+			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
 		});
 
@@ -117,12 +119,25 @@ describe('core game logic', function () {
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleStartedGame.get('name'));
-			expect(nextState.getIn('games', 0, 'players').has(exampleLonePlayer)).to.equal(true);
-			expect(nextState.getIn('games', 0, 'players', exampleLonePlayer, 'score')).to.equal(0);
+			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
+			expect(nextState.getIn(['games', 0, 'players', exampleLonePlayer, 'score'])).to.equal(0);
 
-			const playerHand = nextState.getIn('games', 0, 'players', exampleLonePlayer, 'cards');
-			expect(playerHand).to.equal(exampleHand);
+			const playerHand = nextState.getIn(['games', 0, 'players', exampleLonePlayer, 'hand']);
+			const cardCounts = {};
+			playerHand.forEach((card) => cardCounts[card.get('type')] = cardCounts[card.get('type')] ? cardCounts[card.get('type')] + 1 : 1);
+			expect(cardCounts.noun).to.equal(expectedNounsInHand);
+			expect(cardCounts.verb).to.equal(expectedVerbsInHand);
+			expect(cardCounts.situation).to.be.undefined;
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
+		});
+
+		it('doesn\'t add a player to the game if the game does\'t exist', function () {
+			const state = Map({
+				games: List.of(exampleNewGame),
+				lobby: List.of(...examplePlayers)
+			});
+			const nextState = Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'));
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t add a player to the game if the game has a password and the user didn\'t get it right', function () {
@@ -135,11 +150,12 @@ describe('core game logic', function () {
 		});
 
 		it('doesn\'t add a player to the game if they are already in the game', function () {
+			const player = exampleNewGame.get('players').keySeq().first();
 			const state = Map({
 				games: List.of(exampleNewGame),
-				lobby: List.of(...examplePlayers, exampleNewGame.getIn('players', 0))
+				lobby: List.of(...examplePlayers, player)
 			});
-			const nextState = Game.join(state, exampleNewGame.getIn('players', 0), exampleNewGame.get('name'));
+			const nextState = Game.join(state, player, exampleNewGame.get('name'));
 			expect(nextState).to.equal(state);
 		});
 
@@ -166,7 +182,7 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			expect(nextState.getIn('games', 0, 'started')).to.equal(true);
+			expect(nextState.getIn(['games', 0, 'started'])).to.equal(true);
 		});
 
 		it('initializes the game decks', function () {
@@ -179,7 +195,7 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const decks = nextState.getIn('games', 0, 'decks');
+			const decks = nextState.getIn(['games', 0, 'decks']);
 			expect(exampleCards.every((card) => decks.get(card.get('type')).includes(card))).to.equal(true);
 		});
 
@@ -195,7 +211,7 @@ describe('core game logic', function () {
 					exampleNewGameReadyToStart.get('host'), 
 					exampleNewGameReadyToStart.get('name')
 				);
-				randomized = nextState.getIn('games', 0, 'decks').every(
+				randomized = nextState.getIn(['games', 0, 'decks']).every(
 					(deck, decktype) => deck !== exampleCardsByType.get(decktype)
 				);
 				if (randomized) {
@@ -215,12 +231,12 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const game = nextState.getIn('games', 0);
+			const game = nextState.getIn(['games', 0]);
 			const cardsMatchUp =  game.get('players').every(
-				(player, playerName) => player.get('cards').every(
-					(cards, cardType) => exampleCardsByType.has(cardType) && cards.every(
+				(player, playerName) => player.get('hand').every(
+					(hand, cardType) => exampleCardsByType.has(cardType) && hand.every(
 						(card) => exampleCardsByType.get(cardType).includes(card)
-						          && !game.getIn('decks', cardType).includes(card)
+						          && !game.getIn(['decks', cardType]).includes(card)
 					)
 				)
 			);
@@ -237,7 +253,7 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const AllScoresAreZero = nextState.getIn('games', 0, 'players').every(
+			const AllScoresAreZero = nextState.getIn(['games', 0, 'players']).every(
 				(player, playerName) => player.get('score') === 0
 			);
 			expect(AllScoresAreZero).to.equal(true);
@@ -253,10 +269,10 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const game = nextState.getIn('games', 0);
+			const game = nextState.getIn(['games', 0]);
 			const currentSituation =  game.get('currentSituation');
 			expect(currentSituation).to.not.be.undefined;
-			expect(game.getIn('decks', 'situation').includes(currentSituation)).to.equal(false);
+			expect(game.getIn(['decks', 'situation']).includes(currentSituation)).to.equal(false);
 		});
 
 		it('doesn\'t start the game if there is only one player', function () {
@@ -275,7 +291,7 @@ describe('core game logic', function () {
 			});
 			const nextState = Game.start(
 				state, 
-				exampleNewGameReadyToStart.getIn('players', 1), 
+				exampleNewGameReadyToStart.getIn(['players', 1]), 
 				exampleNewGameReadyToStart.get('name')
 			);
 			expect(nextState).to.equal(state);
