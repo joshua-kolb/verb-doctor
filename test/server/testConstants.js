@@ -4,6 +4,17 @@ export const emptyState = Map();
 export const expectedNounsInHand = 4;
 export const expectedVerbsInHand = 4;
 export const randomizeTries = 5;
+export const plainJSCardTypes = {
+	noun: {
+		playable: true
+	},
+	verb: {
+		playable: true
+	},
+	situation: {
+		playable: false
+	}
+};
 export const plainJSCardsByType = {
 	noun: [{
 		type: 'noun',
@@ -93,6 +104,7 @@ export const plainJSExampleHand = [
 export const exampleHand = fromJS(plainJSExampleHand);
 export const exampleCards = fromJS(plainJSExampleCards);
 export const exampleCardsByType = fromJS(plainJSCardsByType);
+export const exampleCardTypes = fromJS(plainJSCardTypes);
 export const exampleLonePlayer = 'LoneWolf1';
 export const exampleDifferentLonePlayer = 'AnotherLoneWolf';
 export const examplePlayers = List.of('player1', 'player2'); // Must be length of at least 2.

@@ -77,12 +77,26 @@ export default class Game {
 
 		state = state.setIn(['games', gameIndex, 'players', playerName], Map({ score: 0 }));
 		game.get('decks').forEach((deck, cardType) => {
-			if (cardType !== 'situation') {
+			if (state.getIn(['cardTypes', cardType, 'playable'])) {
 				state = Game.dealCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 			}
 		});
 
 		return state;
+	}
+
+	static start(state, playerName, gameName) {
+
+		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
+
+		if (gameIndex === -1) {
+			console.warn(`Player "${player}" attempted to start game "${gameName}", but the game didn't exist.`);
+			return state;
+		}
+
+		state.get('cardTypes').forEach();
+
+		return state.setIn(['games', gameIndex, 'started'], true);
 	}
 
 	static dealCards(state, gameIndex, playerName, cardType, amount) {

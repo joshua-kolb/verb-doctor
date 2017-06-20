@@ -2,6 +2,21 @@ import {List, Map, fromJS} from 'immutable';
 
 export default class Lobby {
 
+	static setCardTypes(state, cardTypes) {
+		console.log(`asdf: ${cardTypes}`);
+		cardTypes = fromJS(cardTypes);
+		const isInvalid = cardTypes.some((cardType, name) => 
+			cardType.get('playable') !== true && cardType.get('playable') !== false);
+		
+		if (isInvalid) {
+			console.warn(`Attempted to set cardTypes to ${cardTypes}, but not every type had a field 'playable' set to either true or false.`);
+			return state;
+		}
+
+		console.log(`Successfully set cardTypes to ${cardTypes}`);
+		return state.set('cardTypes', cardTypes);
+	}
+
 	static setCards(state, cards) {
 		console.log(`Successfully set cards to ${fromJS(cards)}`);
 		return state.set('cards', fromJS(cards));

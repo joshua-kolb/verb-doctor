@@ -1,4 +1,15 @@
 {
+	"cardTypes": {
+		"noun": {
+			"playable": true
+		},
+		"verb": {
+			"playable": true
+		},
+		"situation": {
+			"playable": false
+		}
+	},
 	"cards": [{
 		"type": "noun",
 		"text": "wonder paste",

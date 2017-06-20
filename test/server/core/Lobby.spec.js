@@ -1,8 +1,10 @@
 import {expect} from 'chai';
 import {List, Map, fromJS} from 'immutable';
 import {
+	plainJSCardTypes,
 	plainJSExampleCards, 
 	emptyState, 
+	exampleCardTypes,
 	exampleCards,
 	exampleLonePlayer,
 	examplePlayers
@@ -10,6 +12,25 @@ import {
 import Lobby from '../../../src/server/core/Lobby';
 
 describe('core lobby logic', function () {
+
+	describe('setCardTypes', function () {
+
+		it('adds the cardTypes map to the state', function () {
+			const nextState = Lobby.setCardTypes(emptyState, exampleCardTypes);
+			expect(nextState).to.equal(Map({
+				cardTypes: exampleCardTypes
+			}));
+		});
+
+		it('requires that the cardTypes each have playable set to true or false', function () {
+			const nextState = Lobby.setCardTypes(emptyState, Map({ 
+				noun: Map({ playable: 52 }), 
+				verb: Map({ fake: true }) 
+			}));
+			expect(nextState).to.equal(emptyState);
+		});
+
+	});
 
 	describe('setCards', function () {
 

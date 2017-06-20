@@ -5,6 +5,7 @@ import {
 	randomizeTries,
 	exampleCards,
 	exampleCardsByType,
+	exampleCardTypes,
 	examplePlayers,
 	exampleLonePlayer,
 	expectedNounsInHand,
@@ -115,6 +116,7 @@ describe('core game logic', function () {
 
 		it('adds a player to a game, gives them a score of 0 and a new cards, and removes them from the lobby when the game has been started already', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				games: List.of(exampleStartedGame),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
@@ -174,6 +176,7 @@ describe('core game logic', function () {
 
 		it('sets started to true in the game state', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -187,6 +190,7 @@ describe('core game logic', function () {
 
 		it('initializes the game decks', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -203,6 +207,7 @@ describe('core game logic', function () {
 			let randomized = false;
 			for(let i = 0; i < randomizeTries; ++i) {
 				const state = Map({
+					cardTypes: exampleCardTypes,
 					cards: exampleCards,
 					games: List.of(exampleNewGameReadyToStart)
 				});
@@ -223,6 +228,7 @@ describe('core game logic', function () {
 
 		it('deals cards into each of the players\' hands from the decks', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -245,6 +251,7 @@ describe('core game logic', function () {
 
 		it('sets each players\' score to 0', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -261,6 +268,7 @@ describe('core game logic', function () {
 
 		it('sets the currentSituation in the game state by dealing it from the situation deck', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -277,6 +285,7 @@ describe('core game logic', function () {
 
 		it('doesn\'t start the game if there is only one player', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGame)
 			});
@@ -286,6 +295,7 @@ describe('core game logic', function () {
 
 		it('only allows the host to start the game', function () {
 			const state = Map({
+				cardTypes: exampleCardTypes,
 				cards: exampleCards,
 				games: List.of(exampleNewGameReadyToStart)
 			});
@@ -293,6 +303,34 @@ describe('core game logic', function () {
 				state, 
 				exampleNewGameReadyToStart.getIn(['players', 1]), 
 				exampleNewGameReadyToStart.get('name')
+			);
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t alter the state if the game doesn\'t exist', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				game: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name') + 'DIFFERENT'
+			);
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t alter the state if the game is already started', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				game: List.of(exampleStartedGame)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleStartedGame.get('host'), 
+				exampleStartedGame.get('name')
 			);
 			expect(nextState).to.equal(state);
 		});
