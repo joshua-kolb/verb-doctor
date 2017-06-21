@@ -403,7 +403,7 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('name')
 			);
 
-			expect(nextState.hasIn(['games', 0, 'host'])).to.equal(newHostPlayerName);
+			expect(nextState.getIn(['games', 0, 'host'])).to.equal(newHostPlayerName);
 		});
 
 		it('removes the player\'s submittedPlay if it exists', function () {
@@ -422,6 +422,20 @@ describe('core game logic', function () {
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1) + 'DIFFERENT';
 			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
+
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t do anything if the game doesn\'t exist', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
+			const nextState = Game.leave(
+				state, 
+				leavingPlayerName, 
+				exampleStartedGame.get('name') + 'DIFFERENT'
+			);
 
 			expect(nextState).to.equal(state);
 		});

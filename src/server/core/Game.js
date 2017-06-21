@@ -134,6 +134,54 @@ export default class Game {
 		return state.setIn(['games', gameIndex, 'started'], true);
 	}
 
+	static leave(state, playerName, gameName) {
+
+		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
+
+		if (gameIndex === -1) {
+			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but the game didn't exist.`);
+			return state;
+		}
+
+		if (!state.hasIn(['games', gameIndex, 'players', playerName])) {
+			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but was not in the game to begin with.`);
+			return state;
+		}
+
+		logger.info(`Player "${playerName}" has successfully left game "${gameName}"`);
+		state = state.deleteIn(['games', gameIndex, 'players', playerName])		             
+		state = Lobby.login(state, playerName);
+
+		if (state.hasIn(['games', gameIndex, 'submittedPlays'])) {
+			const submittedPlayIndex = state.getIn(['games', gameIndex, 'submittedPlays'])
+			                                .findIndex((submittedPlay) => submittedPlay.get('player') === playerName);
+		
+			if (submittedPlayIndex !== -1) {
+				logger.info(`Because player "${playerName}" left game "${gameName}", their submittedPlay was removed.`);
+				state = state.deleteIn(['games', gameIndex, 'submittedPlays', submittedPlayIndex]);
+			}
+		}
+
+		const players = state.getIn(['games', gameIndex, 'players']).keySeq();
+		if (players.size < 1 || (players.size < 2 && state.getIn(['games', gameIndex, 'started']))) {
+			logger.info(`Because player "${playerName}" left game "${gameName}", there were no longer enough players to keep the game going. The game was removed.`);
+			players.forEach(function (player) {
+				state = Lobby.login(state, player);
+			});
+			state = state.deleteIn(['games', gameIndex]);
+		} else if (state.getIn(['games', gameIndex, 'host']) === playerName) {
+			const newHost = players.get(0);
+			logger.info(`Because player "${playerName}" left game "${gameName}" and was the host, player "${newHost}" was promoted to be host.`)
+			state = state.setIn(['games', gameIndex, 'host'], newHost);
+		}
+
+		return state;
+	}
+
+	/**********************************************************/
+	/* Private functions, only used in this library are below */
+	/**********************************************************/
+
 	static dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
 
 		const game = state.getIn(['games', gameIndex]);
