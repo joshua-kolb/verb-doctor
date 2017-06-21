@@ -138,8 +138,8 @@ export const exampleStartedGame = fromJS({
 	name: 'Getting Started',
 	started: true,
 	host: 'selfStarter',
-	decider: 'duoStarter',
-	winnerOfLastRound: 'duoStarter',
+	decider: 'selfStarter',
+	winnerOfLastRound: 'selfStarter',
 	currentSituation: plainJSCardsByType.situation[0],
 	players: {
 		selfStarter: {
@@ -149,10 +149,41 @@ export const exampleStartedGame = fromJS({
 		duoStarter: {
 			score: 0,
 			cards: plainJSExampleHand
+		},
+		trioStarter: {
+			score: 0,
+			cards: plainJSExampleHand
 		}
 	},
 	submittedPlays: [{
-		player: 'selfStarter',
+		player: 'duoStarter',
+		'cardsSubmitted': [plainJSCardsByType.noun[0]]
+	}],
+	decks: {
+		noun: plainJSCardsByType.noun,
+		verb: plainJSCardsByType.verb,
+		situation: plainJSCardsByType.situation
+	}
+});
+export const exampleStartedGameWithTwoPlayers = fromJS({
+	name: 'Getting Started II the Sequel',
+	started: true,
+	host: 'selfStarter2',
+	decider: 'selfStarter2',
+	winnerOfLastRound: 'selfStarter2',
+	currentSituation: plainJSCardsByType.situation[0],
+	players: {
+		selfStarter2: {
+			score: 0,
+			cards: plainJSExampleHand
+		},
+		duoStarter2: {
+			score: 0,
+			cards: plainJSExampleHand
+		}
+	},
+	submittedPlays: [{
+		player: 'duoStarter2',
 		'cardsSubmitted': [plainJSCardsByType.noun[0]]
 	}],
 	decks: {

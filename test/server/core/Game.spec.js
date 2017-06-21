@@ -13,7 +13,8 @@ import {
 	exampleNewGame,
 	exampleNewGameWithPassword,
 	exampleNewGameReadyToStart,
-	exampleStartedGame
+	exampleStartedGame,
+	exampleStartedGameWithTwoPlayers
 } from '../testConstants'
 import Game from '../../../src/server/core/Game';
 
@@ -342,19 +343,87 @@ describe('core game logic', function () {
 	describe('leave', function () {
 
 		it('removes the player from the game state', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
+			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
+			expect(nextState.hasIn(['games', 0])).to.equal(true);
+			expect(nextState.hasIn(['games', 0, 'players', leavingPlayerName])).to.equal(false);
 		});
 
-		it('removes the game from the state if there is only one player remaining', function () {
+		it('adds the player to the lobby', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
+			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
+			expect(nextState.get('lobby').includes(leavingPlayerName)).to.equal(true);
+		});
+
+		it('removes the game from the state if there is only one player remaining and the game is started', function () {
+			const state = Map({
+				games: List.of(exampleStartedGameWithTwoPlayers)
+			});
+			const leavingPlayerName = exampleStartedGameWithTwoPlayers.get('players').keySeq().get(1);
+			const nextState = Game.leave(
+				state, 
+				leavingPlayerName, 
+				exampleStartedGameWithTwoPlayers.get('name')
+			);
+
+			expect(nextState.hasIn(['games', 0])).to.equal(false);
+		});
+
+		it('removes the game from the state if there are no players remaining and the game is not started', function () {
+			const state = Map({
+				games: List.of(exampleNewGame)
+			});
+			const leavingPlayerName = exampleNewGame.get('host');
+			const nextState = Game.leave(
+				state, 
+				leavingPlayerName, 
+				exampleNewGame.get('name')
+			);
+
+			expect(nextState.hasIn(['games', 0])).to.equal(false);
 		});
 
 		it('changes the host to a different player if the host is leaving', function () {
+			const state = Map({
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const leavingPlayerName = exampleNewGameReadyToStart.get('host');
+			const newHostPlayerName = exampleNewGameReadyToStart.get('players').keySeq().get(1);
+			const nextState = Game.leave(
+				state, 
+				leavingPlayerName, 
+				exampleNewGameReadyToStart.get('name')
+			);
 
+			expect(nextState.hasIn(['games', 0, 'host'])).to.equal(newHostPlayerName);
+		});
+
+		it('removes the player\'s submittedPlay if it exists', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
+			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
+
+			expect(nextState.getIn(['games', 0, 'submittedPlays']).size).to.equal(0);
 		});
 
 		it('doesn\'t do anything if the player isn\'t in the game', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1) + 'DIFFERENT';
+			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
+			expect(nextState).to.equal(state);
 		});
 
 	});
