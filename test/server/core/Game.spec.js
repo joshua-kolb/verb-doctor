@@ -14,7 +14,8 @@ import {
 	exampleNewGameWithPassword,
 	exampleNewGameReadyToStart,
 	exampleStartedGame,
-	exampleStartedGameWithTwoPlayers
+	exampleStartedGameWithTwoPlayers,
+	exampleStartedGameWithDepletedDecks
 } from '../testConstants'
 import Game from '../../../src/server/core/Game';
 
@@ -459,31 +460,128 @@ describe('core game logic', function () {
 	describe('submitPlay', function () {
 
 		it('adds to the submittedPlays list of the game state', function () {
-			
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
+
+			expect(nextState.hasIn(['games', 0, 'submittedPlays', 1])).to.equal(true);
+			const submittedPlay = nextState.getIn(['games', 0, 'submittedPlays', 1]);
+			expect(submittedPlay).to.equal(Map({
+				player: playerName,
+				cardsSubmitted: play
+			}));
 		});
 
 		it('deals new cards to the player\'s hand to replace the cards submitted', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const originalHand = exampleStartedGame.getIn(['players', playerName, 'cards']);
+			const play = List.of(originalHand.get(0));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			const newHand = nextState.getIn(['games', 0, 'players', playerName, 'cards']);
+			expect(newHand.size).to.equal(originalHand.size);
+			expect(newHand.some((newCard) =>
+				originalHand.every((oldCard) => newCard !== oldCard)
+			)).to.equal(true);
 		});
 
 		it('reinitializes card decks if there are no more cards in the decks', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGameWithDepletedDecks)
+			});
+			const playerName = exampleStartedGameWithDepletedDecks.get('players').keySeq().get(1);
+			const gameName = exampleStartedGameWithDepletedDecks.get('name');
+			const originalHand = exampleStartedGameWithDepletedDecks.getIn(['players', playerName, 'cards']);
+			const cardType = originalHand.getIn([0, 'type']);
+			const play = List.of(originalHand.get(0));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			const newDeck = nextState.getIn(['games', 0, 'decks', cardType]);
+			expect(newDeck.size).to.equal(exampleCardsByType.get(cardType) - 1);
 		});
 
 		it('doesn\'t allow the decider to submit a play', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('decider');
+			const gameName = exampleStartedGame.get('name');
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t allow a player to submit a play if they already have', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const gameName = exampleStartedGame.get('name');
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
+
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t allow a simple play that doesn\'t fill all card slots', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', expectedNounsInHand]));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t allow a play with chainer cards that doesn\'t fill all card slots', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const play = exampleStartedGame.getIn(['players', playerName, 'cards', 2]);
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t allow a play that includes cards that aren\'t in the player\'s hand', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const play = exampleCards.get(expectedNounsInHand);
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
+			expect(nextState).to.equal(state);
 		});
 
 	});

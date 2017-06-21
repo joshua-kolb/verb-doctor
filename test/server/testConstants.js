@@ -28,7 +28,7 @@ export const plainJSCardsByType = {
 	},
 	{
 		type: 'noun',
-		text: 'thoughts concerning thoughts',
+		text: 'thoughts concerning thoughts about []',
 		slots: []
 	},
 	{
@@ -190,5 +190,31 @@ export const exampleStartedGameWithTwoPlayers = fromJS({
 		noun: plainJSCardsByType.noun,
 		verb: plainJSCardsByType.verb,
 		situation: plainJSCardsByType.situation
+	}
+});
+export const exampleStartedGameWithDepletedDecks = fromJS({
+	name: 'Deck Depletion',
+	started: true,
+	host: 'trashDumper',
+	decider: 'trashDumper',
+	currentSituation: plainJSCardsByType.situation[0],
+	players: {
+		trashDumper: {
+			score: 0,
+			cards: plainJSExampleHand
+		},
+		garbageCollector: {
+			score: 0,
+			cards: plainJSExampleHand
+		}
+	},
+	submittedPlays: [{
+		player: 'duoStarter2',
+		'cardsSubmitted': [plainJSCardsByType.noun[0]]
+	}],
+	decks: {
+		noun: [],
+		verb: [],
+		situation: []
 	}
 });
