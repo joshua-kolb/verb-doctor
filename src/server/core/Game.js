@@ -115,6 +115,8 @@ export default class Game {
 			state = Game.createDeck(state, gameIndex, cardTypeName);
 		});
 
+		state = state.setIn(['games', gameIndex, 'decider'], players.keySeq().get(0));
+
 		players.forEach(function(player, playerName) {
 			state = state.setIn(['games', gameIndex, 'players', playerName, 'score'], 0);
 			state.get('cardTypes').forEach(function(cardType, cardTypeName) {

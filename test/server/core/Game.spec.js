@@ -286,6 +286,20 @@ describe('core game logic', function () {
 			expect(game.getIn(['decks', 'situation']).includes(currentSituation)).to.equal(false);
 		});
 
+		it('sets the decider in the game state', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleNewGameReadyToStart)
+			});
+			const nextState = Game.start(
+				state, 
+				exampleNewGameReadyToStart.get('host'), 
+				exampleNewGameReadyToStart.get('name')
+			);
+			expect(nextState.getIn(['games', 0, 'decider'])).to.not.be.undefined;
+		});
+
 		it('doesn\'t start the game if there is only one player', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
@@ -445,7 +459,7 @@ describe('core game logic', function () {
 	describe('submitPlay', function () {
 
 		it('adds to the submittedPlays list of the game state', function () {
-
+			
 		});
 
 		it('deals new cards to the player\'s hand to replace the cards submitted', function () {
