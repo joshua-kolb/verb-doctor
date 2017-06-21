@@ -79,7 +79,7 @@ export default class Game {
 		state = state.setIn(['games', gameIndex, 'players', playerName], Map({ score: 0 }));
 		game.get('decks').forEach((deck, cardType) => {
 			if (state.getIn(['cardTypes', cardType, 'playable'])) {
-				state = Game.dealCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+				state = Game.dealPlayableCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 			}
 		});
 
@@ -91,16 +91,50 @@ export default class Game {
 		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
 
 		if (gameIndex === -1) {
-			logger.warn(`Player "${player}" attempted to start game "${gameName}", but the game didn't exist.`);
+			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		state.get('cardTypes').forEach();
+		if (state.getIn(['games', gameIndex, 'started'])) {
+			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game is already started.`);
+			return state;
+		}
 
+		if (state.getIn(['games', gameIndex, 'host']) !== playerName) {
+			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but they are not the host.`);
+			return state;
+		}
+
+		const players = state.getIn(['games', gameIndex, 'players']);
+		if (players.keySeq().size < 2) {
+			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't have enough players.`);
+			return state;
+		}
+
+		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
+			state = Game.createDeck(state, gameIndex, cardTypeName);
+		});
+
+		players.forEach(function(player, playerName) {
+			state = state.setIn(['games', gameIndex, 'players', playerName, 'score'], 0);
+			state.get('cardTypes').forEach(function(cardType, cardTypeName) {
+				if (cardType.get('playable')) {
+					state = Game.dealPlayableCards(state, gameIndex, playerName, cardTypeName, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+				}
+			});
+		});
+
+		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
+			if (!cardType.get('playable')) {
+				state = Game.dealNonPlayableCard(state, gameIndex, cardTypeName);
+			}
+		});
+
+		logger.info(`Player '${playerName}' successfully started game '${gameName}'`);
 		return state.setIn(['games', gameIndex, 'started'], true);
 	}
 
-	static dealCards(state, gameIndex, playerName, cardType, amount) {
+	static dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
 
 		const game = state.getIn(['games', gameIndex]);
 		if (!game) {
@@ -120,7 +154,7 @@ export default class Game {
 
 		let deck = game.getIn(['decks', cardType]);
 		if (deck.size < amount) {
-			hand = deck;
+			hand = hand.concat(deck);
 			amount -= deck.size;
 			state = Game.createDeck(state, gameIndex, cardType);
 		}
@@ -156,14 +190,39 @@ export default class Game {
 		let top = deck.length;
 
 		while (top > 0) {
-			randomIndex = Math.floor(Math.random() * top);
+			const randomIndex = Math.floor(Math.random() * top);
 			top--;
-			temp = array[top];
-			array[top] = array[randomIndex];
-			array[randomIndex] = temp;
+			const temp = deck[top];
+			deck[top] = deck[randomIndex];
+			deck[randomIndex] = temp;
 		}
 
 		return fromJS(deck);
+	}
+
+	static dealNonPlayableCard(state, gameIndex, cardType) {
+
+		const game = state.getIn(['games', gameIndex]);
+		if (!game) {
+			logger.error(`Attempted to deal a nonplayable card for game with index "${gameIndex}", but no such game exists.`);
+			return state;
+		}
+
+		if (state.getIn(['cardTypes', cardType, 'playable'])) {
+			logger.error(`Attempted to deal a nonplayable card of type "${cardType}", which is playable`);
+			return state;
+		}	
+
+		const deck = game.getIn(['decks', cardType]);
+		const card = deck.first();
+
+		if (deck.size === 1) {
+			state = Game.createDeck(state, gameIndex, cardType);
+		} else {
+			state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
+		}
+
+		return state.setIn(['games', gameIndex, 'current_' + cardType], card);
 	}
 
 }

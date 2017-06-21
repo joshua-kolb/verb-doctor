@@ -13,4 +13,7 @@ Object.keys(window).forEach((key) => {
 });
 
 chai.use(chaiImmutable);
-logger.remove(logger.transports.Console);
+if (!global.loggerNotLoggingToConsole) {
+	//logger.remove(logger.transports.Console);
+	global.loggerNotLoggingToConsole = true;
+}

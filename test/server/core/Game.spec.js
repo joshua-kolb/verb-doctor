@@ -200,7 +200,12 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('name')
 			);
 			const decks = nextState.getIn(['games', 0, 'decks']);
-			expect(exampleCards.every((card) => decks.get(card.get('type')).includes(card))).to.equal(true);
+			const players = nextState.getIn(['games', 0, 'players']);
+			expect(decks.every(
+				(deck, cardType) => deck.every(
+					(card) => exampleCards.includes(card)
+				)
+			)).to.equal(true);
 		});
 
 		it('initializes the game decks as shuffled', function () {
@@ -240,10 +245,7 @@ describe('core game logic', function () {
 			const game = nextState.getIn(['games', 0]);
 			const cardsMatchUp =  game.get('players').every(
 				(player, playerName) => player.get('hand').every(
-					(hand, cardType) => exampleCardsByType.has(cardType) && hand.every(
-						(card) => exampleCardsByType.get(cardType).includes(card)
-						          && !game.getIn(['decks', cardType]).includes(card)
-					)
+					(card) => exampleCardsByType.get(card.get('type')).includes(card)
 				)
 			);
 			expect(cardsMatchUp).to.equal(true);
@@ -266,7 +268,7 @@ describe('core game logic', function () {
 			expect(AllScoresAreZero).to.equal(true);
 		});
 
-		it('sets the currentSituation in the game state by dealing it from the situation deck', function () {
+		it('sets the current_situation in the game state by dealing it from the situation deck', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -278,7 +280,7 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('name')
 			);
 			const game = nextState.getIn(['games', 0]);
-			const currentSituation =  game.get('currentSituation');
+			const currentSituation =  game.get('current_situation');
 			expect(currentSituation).to.not.be.undefined;
 			expect(game.getIn(['decks', 'situation']).includes(currentSituation)).to.equal(false);
 		});
@@ -301,7 +303,7 @@ describe('core game logic', function () {
 			});
 			const nextState = Game.start(
 				state, 
-				exampleNewGameReadyToStart.getIn(['players', 1]), 
+				exampleNewGameReadyToStart.get('players').keySeq().get(1), 
 				exampleNewGameReadyToStart.get('name')
 			);
 			expect(nextState).to.equal(state);
@@ -311,7 +313,7 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				game: List.of(exampleNewGameReadyToStart)
+				games: List.of(exampleNewGameReadyToStart)
 			});
 			const nextState = Game.start(
 				state, 
@@ -325,7 +327,7 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				game: List.of(exampleStartedGame)
+				games: List.of(exampleStartedGame)
 			});
 			const nextState = Game.start(
 				state, 
