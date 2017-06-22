@@ -467,7 +467,7 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
-			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState.hasIn(['games', 0, 'submittedPlays', 1])).to.equal(true);
@@ -486,15 +486,13 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
-			const originalHand = exampleStartedGame.getIn(['players', playerName, 'cards']);
+			const originalHand = exampleStartedGame.getIn(['players', playerName, 'hand']);
 			const play = List.of(originalHand.get(0));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			const newHand = nextState.getIn(['games', 0, 'players', playerName, 'cards']);
+			const newHand = nextState.getIn(['games', 0, 'players', playerName, 'hand']);
 			expect(newHand.size).to.equal(originalHand.size);
-			expect(newHand.some((newCard) =>
-				originalHand.every((oldCard) => newCard !== oldCard)
-			)).to.equal(true);
+			expect(newHand.filter((card) => card.get('type') === 'noun').size).to.equal(expectedNounsInHand);
 		});
 
 		it('reinitializes card decks if there are no more cards in the decks', function () {
@@ -505,13 +503,13 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGameWithDepletedDecks.get('players').keySeq().get(1);
 			const gameName = exampleStartedGameWithDepletedDecks.get('name');
-			const originalHand = exampleStartedGameWithDepletedDecks.getIn(['players', playerName, 'cards']);
+			const originalHand = exampleStartedGameWithDepletedDecks.getIn(['players', playerName, 'hand']);
 			const cardType = originalHand.getIn([0, 'type']);
 			const play = List.of(originalHand.get(0));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			const newDeck = nextState.getIn(['games', 0, 'decks', cardType]);
-			expect(newDeck.size).to.equal(exampleCardsByType.get(cardType) - 1);
+			expect(newDeck.size).to.equal(exampleCardsByType.get(cardType).size - 1);
 		});
 
 		it('doesn\'t allow the decider to submit a play', function () {
@@ -522,7 +520,7 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
-			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState).to.equal(state);
@@ -536,7 +534,7 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
 			const gameName = exampleStartedGame.get('name');
-			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', 0]));
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState).to.equal(state);
@@ -550,7 +548,7 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
-			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'cards', expectedNounsInHand]));
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', expectedNounsInHand]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState).to.equal(state);
@@ -564,7 +562,7 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
-			const play = exampleStartedGame.getIn(['players', playerName, 'cards', 2]);
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 2]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState).to.equal(state);
@@ -578,7 +576,35 @@ describe('core game logic', function () {
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
-			const play = exampleCards.get(expectedNounsInHand);
+			const play = List.of(exampleCards.get(expectedNounsInHand));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
+
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t do anything if the player isn\'t in the game', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2) + 'DIFFERENT';
+			const gameName = exampleStartedGame.get('name');
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
+			const nextState = Game.submitPlay(state, playerName, gameName, play);
+
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t do anything if the game doesn\'t exist', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
+			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
 			expect(nextState).to.equal(state);

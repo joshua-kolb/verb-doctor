@@ -29,7 +29,7 @@ export const plainJSCardsByType = {
 	{
 		type: 'noun',
 		text: 'thoughts concerning thoughts about []',
-		slots: []
+		slots: ['any']
 	},
 	{
 		type: 'noun',
@@ -140,19 +140,19 @@ export const exampleStartedGame = fromJS({
 	host: 'selfStarter',
 	decider: 'selfStarter',
 	winnerOfLastRound: 'selfStarter',
-	currentSituation: plainJSCardsByType.situation[0],
+	current_situation: plainJSCardsByType.situation[0],
 	players: {
 		selfStarter: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		},
 		duoStarter: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		},
 		trioStarter: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		}
 	},
 	submittedPlays: [{
@@ -171,15 +171,15 @@ export const exampleStartedGameWithTwoPlayers = fromJS({
 	host: 'selfStarter2',
 	decider: 'selfStarter2',
 	winnerOfLastRound: 'selfStarter2',
-	currentSituation: plainJSCardsByType.situation[0],
+	current_situation: plainJSCardsByType.situation[0],
 	players: {
 		selfStarter2: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		},
 		duoStarter2: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		}
 	},
 	submittedPlays: [{
@@ -197,15 +197,15 @@ export const exampleStartedGameWithDepletedDecks = fromJS({
 	started: true,
 	host: 'trashDumper',
 	decider: 'trashDumper',
-	currentSituation: plainJSCardsByType.situation[0],
+	current_situation: plainJSCardsByType.situation[0],
 	players: {
 		trashDumper: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		},
 		garbageCollector: {
 			score: 0,
-			cards: plainJSExampleHand
+			hand: plainJSExampleHand
 		}
 	},
 	submittedPlays: [{

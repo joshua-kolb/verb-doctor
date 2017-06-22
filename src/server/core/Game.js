@@ -180,6 +180,95 @@ export default class Game {
 		return state;
 	}
 
+	static submitPlay(state, playerName, gameName, cards) {
+
+		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
+
+		if (gameIndex === -1) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but the game didn't exist.`);
+			return state;
+		}
+
+		if (!state.hasIn(['games', gameIndex, 'players', playerName])) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was not in the game.`);
+			return state;
+		}
+
+		if (state.getIn(['games', gameIndex, 'decider']) === playerName) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was the decider.`);
+			return state;
+		}
+
+		const playerAlreadySubmitted = state.getIn(['games', gameIndex, 'submittedPlays'])
+			.some((play) => play.get('player') === playerName);
+
+		if (playerAlreadySubmitted) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they had already submitted one before.`);
+			return state;
+		}
+
+		const hand = state.getIn(['games', gameIndex, 'players', playerName, 'hand']);
+		const cardNotInPlayersHand = cards.some((playCard) => hand.every((handCard) => playCard !== handCard));
+		if (cardNotInPlayersHand) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they tried to use cards that weren't in their hand.`)
+			return state;
+		}
+
+		let slotTypeMismatch = false;
+		let tooManyCards = false;
+		let slots = state.getIn(['games', gameIndex, 'current_situation', 'slots']);
+		cards.forEach(function(card) {
+			if (slots.first() !== 'any' && slots.first() !== card.get('type')) {
+				slotTypeMismatch = true;
+			}
+
+			if (slots.size === 0) {
+				tooManyCards = true;
+			}
+
+			slots = slots.shift();
+
+			if (card.get('slots').size > 0) {
+				slots = slots.unshift(...(card.get('slots')));
+			}
+		});
+
+		if (slotTypeMismatch) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there was a slot type mismatch.`);
+			return state;
+		}
+
+		if (tooManyCards) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but not all slots were filled.`);
+			return state;
+		}
+
+		if (slots.size !== 0) {
+			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there were too many cards submitted.`);
+			return state;
+		}
+
+		let typeCount = Map();
+		cards.forEach(function(card, cardIndex) { 
+			state = state.deleteIn(['games', gameIndex, 'players', playerName, 'hand', cardIndex]);
+			typeCount = typeCount.update(card.get('type'), (count) => count ? count++ : 1);
+		});
+
+		typeCount.forEach((count, cardType) => 
+			state = Game.dealPlayableCards(state, gameIndex, playerName, cardType, count)
+		);
+
+		const play = Map({
+			player: playerName,
+			cardsSubmitted: cards
+		});
+
+		return state.updateIn(
+			['games', gameIndex, 'submittedPlays'], 
+			(submittedPlays) => submittedPlays ? submittedPlays.push(play) : List.of(play)
+		);
+	}
+
 	/**********************************************************/
 	/* Private functions, only used in this library are below */
 	/**********************************************************/
@@ -207,12 +296,13 @@ export default class Game {
 			hand = hand.concat(deck);
 			amount -= deck.size;
 			state = Game.createDeck(state, gameIndex, cardType);
+			deck = state.getIn(['games', gameIndex, 'decks', cardType]);
 		}
 
 		hand = hand.concat(deck.slice(0, amount));
 		deck = deck.splice(0, amount);
 
-		logger.info(`Successfully dealt ${amount} cards of type "${cardType}" to player "${playerName} in game with index "${gameIndex}".`);
+		logger.info(`Successfully dealt ${amount} card(s) of type "${cardType}" to player "${playerName} in game with index "${gameIndex}".`);
 		return state.setIn(['games', gameIndex, 'players', playerName, 'hand'], hand)
 		            .setIn(['games', gameIndex, 'decks', cardType], deck);
 	}
