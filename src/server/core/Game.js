@@ -79,7 +79,7 @@ export default class Game {
 		state = state.setIn(['games', gameIndex, 'players', playerName], Map({ score: 0 }));
 		game.get('decks').forEach((deck, cardType) => {
 			if (state.getIn(['cardTypes', cardType, 'playable'])) {
-				state = Game.dealPlayableCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+				state = dealPlayableCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 			}
 		});
 
@@ -112,7 +112,7 @@ export default class Game {
 		}
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
-			state = Game.createDeck(state, gameIndex, cardTypeName);
+			state = createDeck(state, gameIndex, cardTypeName);
 		});
 
 		state = state.setIn(['games', gameIndex, 'decider'], players.keySeq().get(0));
@@ -121,14 +121,14 @@ export default class Game {
 			state = state.setIn(['games', gameIndex, 'players', playerName, 'score'], 0);
 			state.get('cardTypes').forEach(function(cardType, cardTypeName) {
 				if (cardType.get('playable')) {
-					state = Game.dealPlayableCards(state, gameIndex, playerName, cardTypeName, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+					state = dealPlayableCards(state, gameIndex, playerName, cardTypeName, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 				}
 			});
 		});
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
 			if (!cardType.get('playable')) {
-				state = Game.dealNonPlayableCard(state, gameIndex, cardTypeName);
+				state = dealNonPlayableCard(state, gameIndex, cardTypeName);
 			}
 		});
 
@@ -255,7 +255,7 @@ export default class Game {
 		});
 
 		typeCount.forEach((count, cardType) => 
-			state = Game.dealPlayableCards(state, gameIndex, playerName, cardType, count)
+			state = dealPlayableCards(state, gameIndex, playerName, cardType, count)
 		);
 
 		const play = Map({
@@ -268,101 +268,96 @@ export default class Game {
 			(submittedPlays) => submittedPlays ? submittedPlays.push(play) : List.of(play)
 		);
 	}
+}
 
-	/**********************************************************/
-	/* Private functions, only used in this library are below */
-	/**********************************************************/
+function dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
 
-	static dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
-
-		const game = state.getIn(['games', gameIndex]);
-		if (!game) {
-			logger.error(`Attempted to deal cards for game with index "${gameIndex}", but no such game exists.`);
-			return state;
-		}
-
-		if (!game.hasIn(['players', playerName])) {
-			logger.error(`Attempted to deal cards to player "${playerName}" in game with index "${gameIndex}", but the player doesn't exist in the game.`);
-			return state;
-		}
-
-		let hand = game.getIn(['players', playerName, 'hand']);
-		if (!hand) {
-			hand = List();
-		}
-
-		let deck = game.getIn(['decks', cardType]);
-		if (deck.size < amount) {
-			hand = hand.concat(deck);
-			amount -= deck.size;
-			state = Game.createDeck(state, gameIndex, cardType);
-			deck = state.getIn(['games', gameIndex, 'decks', cardType]);
-		}
-
-		hand = hand.concat(deck.slice(0, amount));
-		deck = deck.splice(0, amount);
-
-		logger.info(`Successfully dealt ${amount} card(s) of type "${cardType}" to player "${playerName} in game with index "${gameIndex}".`);
-		return state.setIn(['games', gameIndex, 'players', playerName, 'hand'], hand)
-		            .setIn(['games', gameIndex, 'decks', cardType], deck);
+	const game = state.getIn(['games', gameIndex]);
+	if (!game) {
+		logger.error(`Attempted to deal cards for game with index "${gameIndex}", but no such game exists.`);
+		return state;
 	}
 
-	static createDeck(state, gameIndex, cardType) {
-
-		const game = state.getIn(['games', gameIndex]);
-		if (!game) {
-			logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but the game doesn't exist.`);
-			return state;
-		}
-
-		const newDeck = Game.shuffle(state.get('cards').filter((card) => card.get('type') === cardType));
-		if (!newDeck.size) {
-			logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but no cards were put into the deck.`);
-			return state;
-		}
-
-		logger.info(`Successfully created deck with cardType "${cardType}" for game with index "${gameIndex}".`);
-		return state.setIn(['games', gameIndex, 'decks', cardType], newDeck);
+	if (!game.hasIn(['players', playerName])) {
+		logger.error(`Attempted to deal cards to player "${playerName}" in game with index "${gameIndex}", but the player doesn't exist in the game.`);
+		return state;
 	}
 
-	static shuffle(deck) {
-		deck = deck.toJS();
-		let top = deck.length;
-
-		while (top > 0) {
-			const randomIndex = Math.floor(Math.random() * top);
-			top--;
-			const temp = deck[top];
-			deck[top] = deck[randomIndex];
-			deck[randomIndex] = temp;
-		}
-
-		return fromJS(deck);
+	let hand = game.getIn(['players', playerName, 'hand']);
+	if (!hand) {
+		hand = List();
 	}
 
-	static dealNonPlayableCard(state, gameIndex, cardType) {
-
-		const game = state.getIn(['games', gameIndex]);
-		if (!game) {
-			logger.error(`Attempted to deal a nonplayable card for game with index "${gameIndex}", but no such game exists.`);
-			return state;
-		}
-
-		if (state.getIn(['cardTypes', cardType, 'playable'])) {
-			logger.error(`Attempted to deal a nonplayable card of type "${cardType}", which is playable`);
-			return state;
-		}	
-
-		const deck = game.getIn(['decks', cardType]);
-		const card = deck.first();
-
-		if (deck.size === 1) {
-			state = Game.createDeck(state, gameIndex, cardType);
-		} else {
-			state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
-		}
-
-		return state.setIn(['games', gameIndex, 'current_' + cardType], card);
+	let deck = game.getIn(['decks', cardType]);
+	if (deck.size < amount) {
+		hand = hand.concat(deck);
+		amount -= deck.size;
+		state = createDeck(state, gameIndex, cardType);
+		deck = state.getIn(['games', gameIndex, 'decks', cardType]);
 	}
 
+	hand = hand.concat(deck.slice(0, amount));
+	deck = deck.splice(0, amount);
+
+	logger.info(`Successfully dealt ${amount} card(s) of type "${cardType}" to player "${playerName} in game with index "${gameIndex}".`);
+	return state.setIn(['games', gameIndex, 'players', playerName, 'hand'], hand)
+	            .setIn(['games', gameIndex, 'decks', cardType], deck);
+}
+
+function createDeck(state, gameIndex, cardType) {
+
+	const game = state.getIn(['games', gameIndex]);
+	if (!game) {
+		logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but the game doesn't exist.`);
+		return state;
+	}
+
+	const newDeck = shuffle(state.get('cards').filter((card) => card.get('type') === cardType));
+	if (!newDeck.size) {
+		logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but no cards were put into the deck.`);
+		return state;
+	}
+
+	logger.info(`Successfully created deck with cardType "${cardType}" for game with index "${gameIndex}".`);
+	return state.setIn(['games', gameIndex, 'decks', cardType], newDeck);
+}
+
+function shuffle(deck) {
+	deck = deck.toJS();
+	let top = deck.length;
+
+	while (top > 0) {
+		const randomIndex = Math.floor(Math.random() * top);
+		top--;
+		const temp = deck[top];
+		deck[top] = deck[randomIndex];
+		deck[randomIndex] = temp;
+	}
+
+	return fromJS(deck);
+}
+
+function dealNonPlayableCard(state, gameIndex, cardType) {
+
+	const game = state.getIn(['games', gameIndex]);
+	if (!game) {
+		logger.error(`Attempted to deal a nonplayable card for game with index "${gameIndex}", but no such game exists.`);
+		return state;
+	}
+
+	if (state.getIn(['cardTypes', cardType, 'playable'])) {
+		logger.error(`Attempted to deal a nonplayable card of type "${cardType}", which is playable`);
+		return state;
+	}	
+
+	const deck = game.getIn(['decks', cardType]);
+	const card = deck.first();
+
+	if (deck.size === 1) {
+		state = createDeck(state, gameIndex, cardType);
+	} else {
+		state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
+	}
+
+	return state.setIn(['games', gameIndex, 'current_' + cardType], card);
 }
