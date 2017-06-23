@@ -162,7 +162,7 @@ export const exampleStartedGame = fromJS({
 	decks: {
 		noun: plainJSCardsByType.noun,
 		verb: plainJSCardsByType.verb,
-		situation: plainJSCardsByType.situation
+		situation: plainJSCardsByType.situation.slice(1)
 	}
 });
 export const exampleStartedGameWithTwoPlayers = fromJS({
@@ -189,7 +189,7 @@ export const exampleStartedGameWithTwoPlayers = fromJS({
 	decks: {
 		noun: plainJSCardsByType.noun,
 		verb: plainJSCardsByType.verb,
-		situation: plainJSCardsByType.situation
+		situation: plainJSCardsByType.situation.slice(1)
 	}
 });
 export const exampleStartedGameWithDepletedDecks = fromJS({

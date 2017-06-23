@@ -296,6 +296,35 @@ export default class Game {
 		            .setIn(['games', gameIndex, 'players', winnerName, 'score'], previousScore + 1);
 	}
 
+	static nextRound(state, playerName, gameName) {
+
+		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
+
+		if (gameIndex === -1) {
+			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the game didn't exist.`);
+			return state;
+		}
+
+		if (playerName !== state.getIn(['games', gameIndex, 'host'])) {
+			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the player isn't the host of the game.`);
+			return state;
+		}
+
+		const players = state.getIn(['games', gameIndex, 'players']).keySeq();
+		const currentDecider = state.getIn(['games', gameIndex, 'decider']);
+		const currentDeciderIndex = players.indexOf(currentDecider);
+		const newDecider = players.get((currentDeciderIndex + 1) % players.size);
+		state = state.setIn(['games', gameIndex, 'decider'], newDecider);
+
+		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
+			if (!cardType.get('playable')) {
+				state = dealNonPlayableCard(state, gameIndex, cardTypeName);
+			}
+		});
+
+		return state.deleteIn(['games', gameIndex, 'submittedPlays']);
+	}
+
 }
 
 function dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
@@ -378,14 +407,14 @@ function dealNonPlayableCard(state, gameIndex, cardType) {
 		return state;
 	}	
 
-	const deck = game.getIn(['decks', cardType]);
-	const card = deck.first();
-
-	if (deck.size === 1) {
+	let deck = game.getIn(['decks', cardType]);
+	if (!deck || deck.size === 0) {
 		state = createDeck(state, gameIndex, cardType);
-	} else {
-		state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
+		deck = state.getIn(['games', gameIndex, 'decks', cardType]);
 	}
+
+	const card = deck.first();
+	state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
 
 	return state.setIn(['games', gameIndex, 'current_' + cardType], card);
 }
