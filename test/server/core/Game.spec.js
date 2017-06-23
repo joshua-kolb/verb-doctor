@@ -615,19 +615,64 @@ describe('core game logic', function () {
 	describe('decideWinner', function () {
 
 		it('adds winner of last round to the game state', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('decider');
+			const gameName = exampleStartedGame.get('name');
+			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
+			expect(nextState.getIn(['games', 0, 'winnerOfLastRound'])).to.equal(winnerName);
 		});
 
-		it('adds to the score of the player who won', function () {
+		it('adds 1 to the score of the player who won', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('decider');
+			const gameName = exampleStartedGame.get('name');
+			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const originalScore = exampleStartedGame.getIn(['players', winnerName, 'score']);
+			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
+			expect(nextState.getIn(['games', 0, 'players', winnerName, 'score'])).to.equal(originalScore + 1);
 		});
 
 		it('doesn\'t allow a player who is not the decider to decide', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('players').keySeq().get(2);
+			const gameName = exampleStartedGame.get('name');
+			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t allow the winner to be decided when they have not submitted a play', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('decider');
+			const gameName = exampleStartedGame.get('name');
+			const winnerName = exampleStartedGame.get('players').keySeq().get(2);
+			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
+			expect(nextState).to.equal(state);
+		});
+
+		it('doesn\'t do anything if the game doesn\'t exist.', function () {
+			const state = Map({
+				games: List.of(exampleStartedGame)
+			});
+			const playerName = exampleStartedGame.get('decider');
+			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
+			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
+
+			expect(nextState).to.equal(state);
 		});
 
 	});
@@ -648,6 +693,10 @@ describe('core game logic', function () {
 
 		it('removes the submittedPlays from the game state', function () {
 
+		});
+
+		it('doesn\'t do anything if the game doesn\'t exist.', function () {
+			
 		});
 
 	});
