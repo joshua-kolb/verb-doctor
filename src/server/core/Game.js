@@ -268,6 +268,34 @@ export default class Game {
 			(submittedPlays) => submittedPlays ? submittedPlays.push(play) : List.of(play)
 		);
 	}
+
+	static decideWinner(state, playerName, gameName, winnerName) {
+
+		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
+
+		if (gameIndex === -1) {
+			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the game didn't exist.`);
+			return state;
+		}
+
+		if (playerName !== state.getIn(['games', gameIndex, 'decider'])) {
+			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the player wasn't the decider.`);
+			return state;
+		}
+
+		const submittedPlayIndex = state.getIn(['games', gameIndex, 'submittedPlays'])
+		                                .findIndex((play) => play.get('player') === winnerName);
+		
+		if (submittedPlayIndex === -1) {
+			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}" to be player "${winnerName}", but player "${winnerName}" never submitted a play.`);
+			return state;
+		}
+
+		const previousScore = state.getIn(['games', gameIndex, 'players', winnerName, 'score']);
+		return state.setIn(['games', gameIndex, 'winnerOfLastRound'], winnerName)
+		            .setIn(['games', gameIndex, 'players', winnerName, 'score'], previousScore + 1);
+	}
+
 }
 
 function dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
