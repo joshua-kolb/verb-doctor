@@ -680,23 +680,89 @@ describe('core game logic', function () {
 	describe('nextRound', function () {
 
 		it('sets the currentSituation to a new situation card dealt from the situation deck', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			})
+			const playerName = exampleStartedGame.get('host');
+			const gameName = exampleStartedGame.get('name');
+			const originalSituation = exampleStartedGame.get('current_situation');
+			const nextState = Game.nextRound(state, playerName, gameName);
 
+			expect(nextState.hasIn(['games', 0, 'current_situation'])).to.equal(true);
+			expect(nextState.getIn(['games', 0, 'current_situation'])).to.not.equal(originalSituation);
 		});
 
 		it('reinitializes the situation deck if there are no more cards left', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGameWithDepletedDecks)
+			})
+			const playerName = exampleStartedGameWithDepletedDecks.get('host');
+			const gameName = exampleStartedGameWithDepletedDecks.get('name');
+			const nextState = Game.nextRound(state, playerName, gameName);
 
+			const newDeck = nextState.getIn(['games', 0, 'decks', 'situation']);
+			expect(newDeck.size).to.equal(exampleCardsByType.get('situation').size - 1);
 		});
 
 		it('sets the decider to the next player', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			})
+			const playerName = exampleStartedGame.get('host');
+			const gameName = exampleStartedGame.get('name');
+			const originalDecider = exampleStartedGame.get('decider');
+			const nextState = Game.nextRound(state, playerName, gameName);
 
+			const newDecider = nextState.getIn(['games', 0, 'decider']);
+			const players = nextState.getIn(['games', 0, 'players']).keySeq();
+			expect(newDecider).to.not.be.undefined;
+			expect(newDecider).to.not.equal(originalDecider);
+			expect(players.includes(newDecider)).to.equal(true);
 		});
 
 		it('removes the submittedPlays from the game state', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			})
+			const playerName = exampleStartedGame.get('host');
+			const gameName = exampleStartedGame.get('name');
+			const nextState = Game.nextRound(state, playerName, gameName);
 
+			expect(nextState.hasIn(['games', 0, 'submittedPlays'])).to.equal(false);
+		});
+
+		it('doesn\'t allow someone who isn\'t the game host to call the next round', function () {
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			})
+			const playerName = exampleStartedGame.get('host') + 'DIFFERENT';
+			const gameName = exampleStartedGame.get('name');
+			const nextState = Game.nextRound(state, playerName, gameName);
+
+			expect(nextState).to.equal(state);
 		});
 
 		it('doesn\'t do anything if the game doesn\'t exist.', function () {
-			
+			const state = Map({
+				cardTypes: exampleCardTypes,
+				cards: exampleCards,
+				games: List.of(exampleStartedGame)
+			})
+			const playerName = exampleStartedGame.get('host');
+			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
+			const nextState = Game.nextRound(state, playerName, gameName);
+
+			expect(nextState).to.equal(state);
 		});
 
 	});
