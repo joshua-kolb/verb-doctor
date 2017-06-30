@@ -1,4 +1,5 @@
 import {Map} from 'immutable';
+import logger from 'winston';
 import Lobby from '../core/Lobby';
 import Game from '../core/Game';
 
@@ -7,14 +8,16 @@ const INITIAL_STATE = Map();
 export default function reducer(state = INITIAL_STATE, action) {
 	switch (action.type) {
 		case 'SET_CARD_TYPES':
-			if (action.meta.remote) {
-				return;
+			if (action.meta && action.meta.remote) {
+				logger.error('The SET_CARD_TYPES action was initiated remotely. Denied request.');
+				return state;
 			}
 			return Lobby.setCardTypes(state, action.cardTypes);
 
 		case 'SET_CARDS':
-			if (action.meta.remote) {
-				return;
+			if (action.meta && action.meta.remote) {
+				logger.error('The SET_CARDS action was initiated remotely. Denied request.');
+				return state;
 			}
 			return Lobby.setCards(state, action.cards);
 

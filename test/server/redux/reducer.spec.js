@@ -32,6 +32,21 @@ describe('reducer', function () {
 		}));
 	});
 
+	it('SET_CARD_TYPES action doesn\'t do anything if the action is remote', function () {
+		const action = {
+			type: 'SET_CARD_TYPES',
+			meta: {
+				remote: true,
+				player: undefined,
+				game: undefined
+			},
+			cardTypes: exampleCardTypes
+		};
+		const nextState = reducer(emptyState, action);
+
+		expect(nextState).to.equal(emptyState);
+	});
+
 	it('handles SET_CARDS', function () {
 		const action = {
 			type: 'SET_CARDS',
@@ -47,6 +62,21 @@ describe('reducer', function () {
 		expect(nextState).to.equal(fromJS({
 			cards: exampleCards
 		}));
+	});
+
+	it('SET_CARDS action doesn\'t do anything if the action is remote', function () {
+		const action = {
+			type: 'SET_CARDS',
+			meta: {
+				remote: true,
+				player: undefined,
+				game: undefined
+			},
+			cards: exampleCards
+		};
+		const nextState = reducer(emptyState, action);
+
+		expect(nextState).to.equal(emptyState);
 	});
 
 	it('handles LOGIN', function () {
