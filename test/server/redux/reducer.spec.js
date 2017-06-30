@@ -18,6 +18,11 @@ describe('reducer', function () {
 	it('handles SET_CARD_TYPES', function () {
 		const action = {
 			type: 'SET_CARD_TYPES',
+			meta: {
+				remote: false,
+				player: undefined,
+				game: undefined
+			},
 			cardTypes: exampleCardTypes
 		};
 		const nextState = reducer(emptyState, action);
@@ -30,6 +35,11 @@ describe('reducer', function () {
 	it('handles SET_CARDS', function () {
 		const action = {
 			type: 'SET_CARDS',
+			meta: {
+				remote: false,
+				player: undefined,
+				game: undefined
+			},
 			cards: exampleCards
 		};
 		const nextState = reducer(emptyState, action);
@@ -43,7 +53,9 @@ describe('reducer', function () {
 		const action = {
 			type: 'LOGIN',
 			meta: {
-				remote: true
+				remote: true,
+				player: undefined,
+				game: undefined
 			},
 			player: exampleLonePlayer
 		};
@@ -62,7 +74,8 @@ describe('reducer', function () {
 			type: 'LOGOUT',
 			meta: {
 				remote: true,
-				player: exampleLonePlayer
+				player: exampleLonePlayer,
+				game: undefined
 			}
 		};
 		const nextState = reducer(initialState, action);
@@ -78,7 +91,8 @@ describe('reducer', function () {
 			type: 'CREATE_GAME',
 			meta: {
 				remote: true,
-				player: exampleNewGame.get('host')
+				player: exampleNewGame.get('host'),
+				game: undefined
 			},
 			gameName: exampleNewGame.get('name')
 		};
@@ -96,7 +110,8 @@ describe('reducer', function () {
 			type: 'JOIN_GAME',
 			meta: {
 				remote: true,
-				player: exampleLonePlayer
+				player: exampleLonePlayer,
+				game: undefined
 			},
 			gameName: exampleNewGame.get('name')
 		};
