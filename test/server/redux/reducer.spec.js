@@ -1,6 +1,7 @@
 import {Map, List, fromJS} from 'immutable';
 import {expect} from 'chai';
 import {
+	emptyFunction,
 	emptyState,
 	exampleCardTypes,
 	exampleCards,
@@ -25,7 +26,7 @@ describe('reducer', function () {
 			},
 			cardTypes: exampleCardTypes
 		};
-		const nextState = reducer(emptyState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(emptyState, action);
 
 		expect(nextState).to.equal(fromJS({
 			cardTypes: exampleCardTypes
@@ -42,7 +43,7 @@ describe('reducer', function () {
 			},
 			cardTypes: exampleCardTypes
 		};
-		const nextState = reducer(emptyState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(emptyState, action);
 
 		expect(nextState).to.equal(emptyState);
 	});
@@ -57,7 +58,7 @@ describe('reducer', function () {
 			},
 			cards: exampleCards
 		};
-		const nextState = reducer(emptyState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(emptyState, action);
 
 		expect(nextState).to.equal(fromJS({
 			cards: exampleCards
@@ -74,7 +75,7 @@ describe('reducer', function () {
 			},
 			cards: exampleCards
 		};
-		const nextState = reducer(emptyState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(emptyState, action);
 
 		expect(nextState).to.equal(emptyState);
 	});
@@ -89,7 +90,7 @@ describe('reducer', function () {
 			},
 			player: exampleLonePlayer
 		};
-		const nextState = reducer(emptyState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(emptyState, action);
 
 		expect(nextState).to.equal(fromJS({
 			lobby: [exampleLonePlayer]
@@ -108,7 +109,7 @@ describe('reducer', function () {
 				game: undefined
 			}
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
 		expect(nextState).to.equal(emptyState);
 	});
@@ -126,14 +127,18 @@ describe('reducer', function () {
 			},
 			gameName: exampleNewGame.get('name')
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.get('games')).to.equal(List.of(exampleNewGame));
+		expect(nextState.get('games')).to.equal(Map({
+			[exampleNewGame.get('name')]: exampleNewGame
+		}));
 	});
 
 	it('handles JOIN_GAME', function () {
 		const initialState = Map({
-			games: List.of(exampleNewGame),
+			games: Map({
+				[exampleNewGame.get('name')]: exampleNewGame
+			}),
 			lobby: List.of(...examplePlayers, exampleLonePlayer)
 		});
 		const action = {
@@ -145,10 +150,10 @@ describe('reducer', function () {
 			},
 			gameName: exampleNewGame.get('name')
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
 		
-		expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
+		expect(nextState.hasIn(['games', exampleNewGame.get('name'), 'players', exampleLonePlayer])).to.equal(true);
 		expect(nextState.get('lobby')).to.equal(examplePlayers);
 	});
 
@@ -156,7 +161,9 @@ describe('reducer', function () {
 		const initialState = Map({
 			cardTypes: exampleCardTypes,
 			cards: exampleCards,
-			games: List.of(exampleNewGameReadyToStart)
+			games: Map({
+				[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+			})
 		});
 		const action = {
 			type: 'START_GAME',
@@ -166,14 +173,16 @@ describe('reducer', function () {
 				game: exampleNewGameReadyToStart.get('name')
 			}
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.getIn(['games', 0, 'started'])).to.equal(true);
+		expect(nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'started'])).to.equal(true);
 	});
 
 	it('handles LEAVE_GAME', function () {
 		const initialState = Map({
-			games: List.of(exampleStartedGame)
+			games: Map({
+				[exampleStartedGame.get('name')]: exampleStartedGame
+			})
 		});
 		const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
 		const action = {
@@ -184,17 +193,19 @@ describe('reducer', function () {
 				game: exampleStartedGame.get('name')
 			}
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.hasIn(['games', 0])).to.equal(true);
-		expect(nextState.hasIn(['games', 0, 'players', leavingPlayerName])).to.equal(false);
+		expect(nextState.hasIn(['games', exampleStartedGame.get('name')])).to.equal(true);
+		expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'players', leavingPlayerName])).to.equal(false);
 	});
 
 	it('handles SUBMIT_PLAY', function () {
 		const initialState = Map({
 			cardTypes: exampleCardTypes,
 			cards: exampleCards,
-			games: List.of(exampleStartedGame)
+			games: Map({
+				[exampleStartedGame.get('name')]: exampleStartedGame
+			})
 		});
 		const playerName = exampleStartedGame.get('players').keySeq().get(2);
 		const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
@@ -207,10 +218,10 @@ describe('reducer', function () {
 			},
 			cards: play
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.hasIn(['games', 0, 'submittedPlays', 1])).to.equal(true);
-		const submittedPlay = nextState.getIn(['games', 0, 'submittedPlays', 1]);
+		expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'submittedPlays', 1])).to.equal(true);
+		const submittedPlay = nextState.getIn(['games', exampleStartedGame.get('name'), 'submittedPlays', 1]);
 		expect(submittedPlay).to.equal(Map({
 			player: playerName,
 			cardsSubmitted: play
@@ -219,7 +230,9 @@ describe('reducer', function () {
 
 	it('handles DECIDE_WINNER', function () {
 		const initialState = Map({
-			games: List.of(exampleStartedGame)
+			games: Map({
+				[exampleStartedGame.get('name')]: exampleStartedGame
+			})
 		});
 		const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
 		const action = {
@@ -231,16 +244,18 @@ describe('reducer', function () {
 			},
 			winner: winnerName
 		};
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.getIn(['games', 0, 'winnerOfLastRound'])).to.equal(winnerName);
+		expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'winnerOfLastRound'])).to.equal(winnerName);
 	});
 
 	it('handles NEXT_ROUND', function () {
 		const initialState = Map({
 			cardTypes: exampleCardTypes,
 			cards: exampleCards,
-			games: List.of(exampleStartedGame)
+			games: Map({
+				[exampleStartedGame.get('name')]: exampleStartedGame
+			})
 		})
 		const action = {
 			type: 'NEXT_ROUND',
@@ -251,10 +266,10 @@ describe('reducer', function () {
 			}
 		};
 		const originalSituation = exampleStartedGame.get('current_situation');
-		const nextState = reducer(initialState, action);
+		const nextState = reducer(emptyFunction, emptyFunction, emptyFunction)(initialState, action);
 
-		expect(nextState.hasIn(['games', 0, 'current_situation'])).to.equal(true);
-		expect(nextState.getIn(['games', 0, 'current_situation'])).to.not.equal(originalSituation);
+		expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'current_situation'])).to.equal(true);
+		expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'current_situation'])).to.not.equal(originalSituation);
 	});
 
 });

@@ -8,7 +8,7 @@ const INITIAL_STATE = Map();
 
 export default function reducer(broadcast, emitToPlayer, emitToGame) {
 	return function(state = INITIAL_STATE, action) {
-		const result = state;
+		let result = state;
 		try {
 			switch (action.type) {
 				case 'SET_CARD_TYPES':
