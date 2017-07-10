@@ -30,82 +30,84 @@
 		"text": "No one really knows the origin of []. It's probably because something started []",
 		"slots": ["noun", "verb"]
 	}],
-	"games": [{
-		"name": "Epicus",
-		"started": true,
-		"host": "player1",
-		"password": "locked",
-		"decider": "player1",
-		"winnerOfLastRound": "player2",
-		"currentSituation": {
-			"type": "situation",
-			"text": "No one really knows the origin of []. It's probably because something started []",
-			"slots": ["noun", "verb"]
-		},
-		"players": {
-			"player1": {
-				"score": 0,
-				"hand": {
-					"noun": [{
-						"type": "noun",
-						"text": "wonder paste",
-						"slots": []
-					},
-					{
-						"type": "noun",
-						"text": "an interesting item",
-						"slots": []
-					}]
-				}
-			},
-			"player2": {
-				"score": 1,
-				"hand": {
-					"noun": [{
-						"type": "noun",
-						"text": "wonder paste",
-						"slots": []
-					}],
-					"verb": [{
-						"type": "verb",
-						"text": "waking up []",
-						"slots": ["noun"]
-					}]
-				}
-			}
-		},
-		"submittedPlays": [{
-			"player": "player2",
-			"cardsSubmitted": [{
-				"type": "noun",
-				"text": "wonder paste",
-				"slots": []
-			},
-			{
-				"type": "verb",
-				"text": "waking up []",
-				"slots": ["noun"]
-			},
-			{
-				"type": "noun",
-				"text": "a soviet muscle man",
-				"slots": []
-			}]
-		}],
-		"decks": {
-			"noun": [{
-				"type": "noun",
-				"text": "wonder paste",
-				"slots": []
-			}],
-			"verb":  [],
-			"situation": [{
+	"games": {
+		"Epicus": {
+			"name": "Epicus",
+			"started": true,
+			"host": "player1",
+			"password": "locked",
+			"decider": "player1",
+			"winnerOfLastRound": "player2",
+			"currentSituation": {
 				"type": "situation",
 				"text": "No one really knows the origin of []. It's probably because something started []",
 				"slots": ["noun", "verb"]
-			}]
-		}
-	}],
+			},
+			"players": {
+				"player1": {
+					"score": 0,
+					"hand": {
+						"noun": [{
+							"type": "noun",
+							"text": "wonder paste",
+							"slots": []
+						},
+						{
+							"type": "noun",
+							"text": "an interesting item",
+							"slots": []
+						}]
+					}
+				},
+				"player2": {
+					"score": 1,
+					"hand": {
+						"noun": [{
+							"type": "noun",
+							"text": "wonder paste",
+							"slots": []
+						}],
+						"verb": [{
+							"type": "verb",
+							"text": "waking up []",
+							"slots": ["noun"]
+						}]
+					}
+				}
+			},
+			"submittedPlays": [{
+				"player": "player2",
+				"cardsSubmitted": [{
+					"type": "noun",
+					"text": "wonder paste",
+					"slots": []
+				},
+				{
+					"type": "verb",
+					"text": "waking up []",
+					"slots": ["noun"]
+				},
+				{
+					"type": "noun",
+					"text": "a soviet muscle man",
+					"slots": []
+				}]
+			}],
+			"decks": {
+				"noun": [{
+					"type": "noun",
+					"text": "wonder paste",
+					"slots": []
+				}],
+				"verb":  [],
+				"situation": [{
+					"type": "situation",
+					"text": "No one really knows the origin of []. It's probably because something started []",
+					"slots": ["noun", "verb"]
+				}]
+			}
+		}		
+	},
 	"lobby": [
 		"otherPlayer1",
 		"otherPlayer2",

@@ -28,16 +28,23 @@ describe('core game logic', function () {
 				lobby: List.of(exampleNewGame.get('host'))
 			})
 			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
-			expect(nextState.get('games')).to.equal(List.of(exampleNewGame));
+			expect(nextState.get('games')).to.equal(Map({
+				[exampleNewGame.get('name')]: exampleNewGame
+			}));
 		});
 
 		it('adds a new game to the existing game state', function () {
 			const state = Map({
-				games: List.of(exampleNewGameWithPassword),
+				games: Map({
+					[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword
+				}),
 				lobby: List.of(exampleNewGame.get('host'))
 			});
 			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
-			expect(nextState.get('games')).to.equal(state.get('games').push(exampleNewGame));
+			expect(nextState.get('games')).to.equal(Map({
+				[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword,
+				[exampleNewGame.get('name')]: exampleNewGame
+			}));
 		});
 
 		it('removes the player from the lobby', function () {
@@ -58,12 +65,16 @@ describe('core game logic', function () {
 				exampleNewGameWithPassword.get('name'), 
 				exampleNewGameWithPassword.get('password')
 			);
-			expect(nextState.get('games')).to.equal(List.of(exampleNewGameWithPassword));
+			expect(nextState.get('games')).to.equal(Map({
+				[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword
+			}));
 		});
 
 		it('doesn\'t add a game to the state when the name is already taken', function () {
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(exampleNewGame.get('host'))
 			});
 			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
@@ -72,7 +83,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t remove the player from the lobby state when the game doesn\'t get created', function () {
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(exampleNewGame.get('host'))
 			});
 			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
@@ -93,17 +106,21 @@ describe('core game logic', function () {
 
 		it('adds a player to the game and removes them from the lobby when not started', function () {
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleNewGame.get('name'));
-			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
+			expect(nextState.hasIn(['games', exampleNewGame.get('name'), 'players', exampleLonePlayer])).to.equal(true);
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
 		});
 
 		it('adds a player to the game when they get the password right', function () {
 			const state = Map({
-				games: List.of(exampleNewGameWithPassword),
+				games: Map({
+					[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword
+				}),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(
@@ -112,21 +129,28 @@ describe('core game logic', function () {
 				exampleNewGameWithPassword.get('name'), 
 				exampleNewGameWithPassword.get('password')
 			);
-			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
+			expect(nextState.hasIn([
+				'games', 
+				exampleNewGameWithPassword.get('name'), 
+				'players', 
+				exampleLonePlayer
+			])).to.equal(true);
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
 		});
 
 		it('adds a player to a game, gives them a score of 0 and a new cards, and removes them from the lobby when the game has been started already', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
-				games: List.of(exampleStartedGame),
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				}),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleStartedGame.get('name'));
-			expect(nextState.hasIn(['games', 0, 'players', exampleLonePlayer])).to.equal(true);
-			expect(nextState.getIn(['games', 0, 'players', exampleLonePlayer, 'score'])).to.equal(0);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'players', exampleLonePlayer])).to.equal(true);
+			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'players', exampleLonePlayer, 'score'])).to.equal(0);
 
-			const playerHand = nextState.getIn(['games', 0, 'players', exampleLonePlayer, 'hand']);
+			const playerHand = nextState.getIn(['games', exampleStartedGame.get('name'), 'players', exampleLonePlayer, 'hand']);
 			const cardCounts = {};
 			playerHand.forEach((card) => cardCounts[card.get('type')] = cardCounts[card.get('type')] ? cardCounts[card.get('type')] + 1 : 1);
 			expect(cardCounts.noun).to.equal(expectedNounsInHand);
@@ -137,7 +161,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t add a player to the game if the game does\'t exist', function () {
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(...examplePlayers)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'));
@@ -146,7 +172,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t add a player to the game if the game has a password and the user didn\'t get it right', function () {
 			const state = Map({
-				games: List.of(exampleNewGameWithPassword),
+				games: Map({
+					[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword
+				}),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'));
@@ -156,7 +184,9 @@ describe('core game logic', function () {
 		it('doesn\'t add a player to the game if they are already in the game', function () {
 			const player = exampleNewGame.get('players').keySeq().first();
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(...examplePlayers, player)
 			});
 			const nextState = Game.join(state, player, exampleNewGame.get('name'));
@@ -165,7 +195,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t add a player to the game if they don\'t exist in the lobby state', function () {
 			const state = Map({
-				games: List.of(exampleNewGame),
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				}),
 				lobby: List.of(...examplePlayers)
 			});
 			const nextState = Game.join(state, exampleLonePlayer, exampleNewGame.get('name'));
@@ -180,29 +212,33 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			expect(nextState.getIn(['games', 0, 'started'])).to.equal(true);
+			expect(nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'started'])).to.equal(true);
 		});
 
 		it('initializes the game decks', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const decks = nextState.getIn(['games', 0, 'decks']);
-			const players = nextState.getIn(['games', 0, 'players']);
+			const decks = nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'decks']);
+			const players = nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'players']);
 			expect(decks.every(
 				(deck, cardType) => deck.every(
 					(card) => exampleCards.includes(card)
@@ -216,14 +252,16 @@ describe('core game logic', function () {
 				const state = Map({
 					cardTypes: exampleCardTypes,
 					cards: exampleCards,
-					games: List.of(exampleNewGameReadyToStart)
+					games: Map({
+						[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+					})
 				});
 				const nextState = Game.start(
 					state, 
 					exampleNewGameReadyToStart.get('host'), 
 					exampleNewGameReadyToStart.get('name')
 				);
-				randomized = nextState.getIn(['games', 0, 'decks']).every(
+				randomized = nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'decks']).every(
 					(deck, decktype) => deck !== exampleCardsByType.get(decktype)
 				);
 				if (randomized) {
@@ -237,14 +275,16 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const game = nextState.getIn(['games', 0]);
+			const game = nextState.getIn(['games', exampleNewGameReadyToStart.get('name')]);
 			const cardsMatchUp =  game.get('players').every(
 				(player, playerName) => player.get('hand').every(
 					(card) => exampleCardsByType.get(card.get('type')).includes(card)
@@ -257,14 +297,16 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const AllScoresAreZero = nextState.getIn(['games', 0, 'players']).every(
+			const AllScoresAreZero = nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'players']).every(
 				(player, playerName) => player.get('score') === 0
 			);
 			expect(AllScoresAreZero).to.equal(true);
@@ -274,14 +316,16 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			const game = nextState.getIn(['games', 0]);
+			const game = nextState.getIn(['games', exampleNewGameReadyToStart.get('name')]);
 			const currentSituation =  game.get('current_situation');
 			expect(currentSituation).to.not.be.undefined;
 			expect(game.getIn(['decks', 'situation']).includes(currentSituation)).to.equal(false);
@@ -291,21 +335,25 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name')
 			);
-			expect(nextState.getIn(['games', 0, 'decider'])).to.not.be.undefined;
+			expect(nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'decider'])).to.not.be.undefined;
 		});
 
 		it('doesn\'t start the game if there is only one player', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGame)
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				})
 			});
 			const nextState = Game.start(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
 			expect(nextState).to.equal(state);
@@ -315,7 +363,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
@@ -329,7 +379,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const nextState = Game.start(
 				state, 
@@ -343,7 +395,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const nextState = Game.start(
 				state, 
@@ -359,18 +413,22 @@ describe('core game logic', function () {
 
 		it('removes the player from the game state', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
 			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
-			expect(nextState.hasIn(['games', 0])).to.equal(true);
-			expect(nextState.hasIn(['games', 0, 'players', leavingPlayerName])).to.equal(false);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name')])).to.equal(true);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'players', leavingPlayerName])).to.equal(false);
 		});
 
 		it('adds the player to the lobby', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
 			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
@@ -380,7 +438,9 @@ describe('core game logic', function () {
 
 		it('removes the game from the state if there is only one player remaining and the game is started', function () {
 			const state = Map({
-				games: List.of(exampleStartedGameWithTwoPlayers)
+				games: Map({
+					[exampleStartedGameWithTwoPlayers.get('name')]: exampleStartedGameWithTwoPlayers
+				})
 			});
 			const leavingPlayerName = exampleStartedGameWithTwoPlayers.get('players').keySeq().get(1);
 			const nextState = Game.leave(
@@ -394,7 +454,9 @@ describe('core game logic', function () {
 
 		it('removes the game from the state if there are no players remaining and the game is not started', function () {
 			const state = Map({
-				games: List.of(exampleNewGame)
+				games: Map({
+					[exampleNewGame.get('name')]: exampleNewGame
+				})
 			});
 			const leavingPlayerName = exampleNewGame.get('host');
 			const nextState = Game.leave(
@@ -408,7 +470,9 @@ describe('core game logic', function () {
 
 		it('changes the host to a different player if the host is leaving', function () {
 			const state = Map({
-				games: List.of(exampleNewGameReadyToStart)
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
+				})
 			});
 			const leavingPlayerName = exampleNewGameReadyToStart.get('host');
 			const newHostPlayerName = exampleNewGameReadyToStart.get('players').keySeq().get(1);
@@ -418,22 +482,26 @@ describe('core game logic', function () {
 				exampleNewGameReadyToStart.get('name')
 			);
 
-			expect(nextState.getIn(['games', 0, 'host'])).to.equal(newHostPlayerName);
+			expect(nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'host'])).to.equal(newHostPlayerName);
 		});
 
 		it('removes the player\'s submittedPlay if it exists', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
 			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
-			expect(nextState.getIn(['games', 0, 'submittedPlays']).size).to.equal(0);
+			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'submittedPlays']).size).to.equal(0);
 		});
 
 		it('doesn\'t do anything if the player isn\'t in the game', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1) + 'DIFFERENT';
 			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
@@ -443,7 +511,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t do anything if the game doesn\'t exist', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
 			const nextState = Game.leave(
@@ -463,15 +533,17 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			expect(nextState.hasIn(['games', 0, 'submittedPlays', 1])).to.equal(true);
-			const submittedPlay = nextState.getIn(['games', 0, 'submittedPlays', 1]);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'submittedPlays', 1])).to.equal(true);
+			const submittedPlay = nextState.getIn(['games', exampleStartedGame.get('name'), 'submittedPlays', 1]);
 			expect(submittedPlay).to.equal(Map({
 				player: playerName,
 				cardsSubmitted: play
@@ -482,7 +554,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
@@ -490,7 +564,7 @@ describe('core game logic', function () {
 			const play = List.of(originalHand.get(0));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			const newHand = nextState.getIn(['games', 0, 'players', playerName, 'hand']);
+			const newHand = nextState.getIn(['games', exampleStartedGame.get('name'), 'players', playerName, 'hand']);
 			expect(newHand.size).to.equal(originalHand.size);
 			expect(newHand.filter((card) => card.get('type') === 'noun').size).to.equal(expectedNounsInHand);
 		});
@@ -499,7 +573,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGameWithDepletedDecks)
+				games: Map({
+					[exampleStartedGameWithDepletedDecks.get('name')]: exampleStartedGameWithDepletedDecks
+				})
 			});
 			const playerName = exampleStartedGameWithDepletedDecks.get('players').keySeq().get(1);
 			const gameName = exampleStartedGameWithDepletedDecks.get('name');
@@ -508,7 +584,7 @@ describe('core game logic', function () {
 			const play = List.of(originalHand.get(0));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			const newDeck = nextState.getIn(['games', 0, 'decks', cardType]);
+			const newDeck = nextState.getIn(['games', exampleStartedGameWithDepletedDecks.get('name'), 'decks', cardType]);
 			expect(newDeck.size).to.equal(exampleCardsByType.get(cardType).size - 1);
 		});
 
@@ -516,7 +592,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
@@ -530,9 +608,11 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
-			const playerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
+			const playerName = exampleStartedGame.getIn(['submittedPlays', exampleStartedGame.get('name'), 'player']);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
 			const nextState = Game.submitPlay(state, playerName, gameName, play);
@@ -544,7 +624,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
@@ -558,7 +640,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
@@ -572,7 +656,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
@@ -586,7 +672,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2) + 'DIFFERENT';
 			const gameName = exampleStartedGame.get('name');
@@ -600,7 +688,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
@@ -616,19 +706,23 @@ describe('core game logic', function () {
 
 		it('adds winner of last round to the game state', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
 			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
 			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
-			expect(nextState.getIn(['games', 0, 'winnerOfLastRound'])).to.equal(winnerName);
+			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'winnerOfLastRound'])).to.equal(winnerName);
 		});
 
 		it('adds 1 to the score of the player who won', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
@@ -636,12 +730,14 @@ describe('core game logic', function () {
 			const originalScore = exampleStartedGame.getIn(['players', winnerName, 'score']);
 			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
-			expect(nextState.getIn(['games', 0, 'players', winnerName, 'score'])).to.equal(originalScore + 1);
+			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'players', winnerName, 'score'])).to.equal(originalScore + 1);
 		});
 
 		it('doesn\'t allow a player who is not the decider to decide', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
@@ -653,7 +749,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t allow the winner to be decided when they have not submitted a play', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
@@ -665,7 +763,9 @@ describe('core game logic', function () {
 
 		it('doesn\'t do anything if the game doesn\'t exist.', function () {
 			const state = Map({
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			});
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
@@ -683,28 +783,32 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			})
 			const playerName = exampleStartedGame.get('host');
 			const gameName = exampleStartedGame.get('name');
 			const originalSituation = exampleStartedGame.get('current_situation');
 			const nextState = Game.nextRound(state, playerName, gameName);
 
-			expect(nextState.hasIn(['games', 0, 'current_situation'])).to.equal(true);
-			expect(nextState.getIn(['games', 0, 'current_situation'])).to.not.equal(originalSituation);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'current_situation'])).to.equal(true);
+			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'current_situation'])).to.not.equal(originalSituation);
 		});
 
 		it('reinitializes the situation deck if there are no more cards left', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGameWithDepletedDecks)
+				games: Map({
+					[exampleStartedGameWithDepletedDecks.get('name')]: exampleStartedGameWithDepletedDecks
+				})
 			})
 			const playerName = exampleStartedGameWithDepletedDecks.get('host');
 			const gameName = exampleStartedGameWithDepletedDecks.get('name');
 			const nextState = Game.nextRound(state, playerName, gameName);
 
-			const newDeck = nextState.getIn(['games', 0, 'decks', 'situation']);
+			const newDeck = nextState.getIn(['games', exampleStartedGameWithDepletedDecks.get('name'), 'decks', 'situation']);
 			expect(newDeck.size).to.equal(exampleCardsByType.get('situation').size - 1);
 		});
 
@@ -712,15 +816,17 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			})
 			const playerName = exampleStartedGame.get('host');
 			const gameName = exampleStartedGame.get('name');
 			const originalDecider = exampleStartedGame.get('decider');
 			const nextState = Game.nextRound(state, playerName, gameName);
 
-			const newDecider = nextState.getIn(['games', 0, 'decider']);
-			const players = nextState.getIn(['games', 0, 'players']).keySeq();
+			const newDecider = nextState.getIn(['games', exampleStartedGame.get('name'), 'decider']);
+			const players = nextState.getIn(['games', exampleStartedGame.get('name'), 'players']).keySeq();
 			expect(newDecider).to.not.be.undefined;
 			expect(newDecider).to.not.equal(originalDecider);
 			expect(players.includes(newDecider)).to.equal(true);
@@ -730,20 +836,24 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			})
 			const playerName = exampleStartedGame.get('host');
 			const gameName = exampleStartedGame.get('name');
 			const nextState = Game.nextRound(state, playerName, gameName);
 
-			expect(nextState.hasIn(['games', 0, 'submittedPlays'])).to.equal(false);
+			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'submittedPlays'])).to.equal(false);
 		});
 
 		it('doesn\'t allow someone who isn\'t the game host to call the next round', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			})
 			const playerName = exampleStartedGame.get('host') + 'DIFFERENT';
 			const gameName = exampleStartedGame.get('name');
@@ -756,7 +866,9 @@ describe('core game logic', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
-				games: List.of(exampleStartedGame)
+				games: Map({
+					[exampleStartedGame.get('name')]: exampleStartedGame
+				})
 			})
 			const playerName = exampleStartedGame.get('host');
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';

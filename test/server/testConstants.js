@@ -1,5 +1,6 @@
 import {List, Map, fromJS} from 'immutable';
 
+export function emptyFunction () {};
 export const emptyState = Map();
 export const expectedNounsInHand = 4;
 export const expectedVerbsInHand = 4;

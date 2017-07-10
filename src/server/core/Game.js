@@ -30,7 +30,9 @@ export default class Game {
 		if(!state.has('games')) {
 			logger.info(`Player "${hostPlayerName}" successfully created the game "${gameName}" (games state was created).`);
 			return Lobby.logout(state, hostPlayerName)
-			            .set('games', List.of(newGame));
+			            .set('games', Map({
+			            	[gameName]: newGame
+			            }));
 		}
 
 		if(state.get('games').some((game) => game.get('name') === newGame.get('name'))) {
@@ -41,15 +43,14 @@ export default class Game {
 
 		logger.info(`Player "${hostPlayerName}" successfully created the game "${gameName}" (the new game was added to the list of existing games).`);
 		return Lobby.logout(state, hostPlayerName)
-		            .update('games', (games) => games.push(newGame));
+		            .setIn(['games', gameName], newGame);
 	}
 
 	static join(state, playerName, gameName, password) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-		const game = state.getIn(['games', gameIndex]);
+		const game = state.getIn(['games', gameName]);
 
-		if (gameIndex === -1) {
+		if (!game) {
 			logger.warn(`Player "${playerName}" attempted to join game "${gameName}", but no such game was found.`);
 			return state;
 		}
@@ -73,13 +74,13 @@ export default class Game {
 
 		if (!game.get('started')) {
 			logger.info(`Player "${playerName}" successfully join the game "${gameName}" (which has not yet been started).`);
-			return state.setIn(['games', gameIndex, 'players', playerName], Map());
+			return state.setIn(['games', gameName, 'players', playerName], Map());
 		}
 
-		state = state.setIn(['games', gameIndex, 'players', playerName], Map({ score: 0 }));
+		state = state.setIn(['games', gameName, 'players', playerName], Map({ score: 0 }));
 		game.get('decks').forEach((deck, cardType) => {
 			if (state.getIn(['cardTypes', cardType, 'playable'])) {
-				state = dealPlayableCards(state, gameIndex, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+				state = dealPlayableCards(state, gameName, playerName, cardType, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 			}
 		});
 
@@ -88,93 +89,89 @@ export default class Game {
 
 	static start(state, playerName, gameName) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-
-		if (gameIndex === -1) {
+		if (!state.getIn(['games', gameName])) {
 			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		if (state.getIn(['games', gameIndex, 'started'])) {
+		if (state.getIn(['games', gameName, 'started'])) {
 			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game is already started.`);
 			return state;
 		}
 
-		if (state.getIn(['games', gameIndex, 'host']) !== playerName) {
+		if (state.getIn(['games', gameName, 'host']) !== playerName) {
 			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but they are not the host.`);
 			return state;
 		}
 
-		const players = state.getIn(['games', gameIndex, 'players']);
+		const players = state.getIn(['games', gameName, 'players']);
 		if (players.keySeq().size < 2) {
 			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't have enough players.`);
 			return state;
 		}
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
-			state = createDeck(state, gameIndex, cardTypeName);
+			state = createDeck(state, gameName, cardTypeName);
 		});
 
-		state = state.setIn(['games', gameIndex, 'decider'], players.keySeq().get(0));
+		state = state.setIn(['games', gameName, 'decider'], players.keySeq().get(0));
 
 		players.forEach(function(player, playerName) {
-			state = state.setIn(['games', gameIndex, 'players', playerName, 'score'], 0);
+			state = state.setIn(['games', gameName, 'players', playerName, 'score'], 0);
 			state.get('cardTypes').forEach(function(cardType, cardTypeName) {
 				if (cardType.get('playable')) {
-					state = dealPlayableCards(state, gameIndex, playerName, cardTypeName, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
+					state = dealPlayableCards(state, gameName, playerName, cardTypeName, NUMBER_OF_CARDS_TO_DEAL_PER_TYPE);
 				}
 			});
 		});
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
 			if (!cardType.get('playable')) {
-				state = dealNonPlayableCard(state, gameIndex, cardTypeName);
+				state = dealNonPlayableCard(state, gameName, cardTypeName);
 			}
 		});
 
 		logger.info(`Player '${playerName}' successfully started game '${gameName}'`);
-		return state.setIn(['games', gameIndex, 'started'], true);
+		return state.setIn(['games', gameName, 'started'], true);
 	}
 
 	static leave(state, playerName, gameName) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-
-		if (gameIndex === -1) {
+		if (!state.hasIn(['games', gameName])) {
 			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		if (!state.hasIn(['games', gameIndex, 'players', playerName])) {
+		if (!state.hasIn(['games', gameName, 'players', playerName])) {
 			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but was not in the game to begin with.`);
 			return state;
 		}
 
 		logger.info(`Player "${playerName}" has successfully left game "${gameName}"`);
-		state = state.deleteIn(['games', gameIndex, 'players', playerName])		             
+		state = state.deleteIn(['games', gameName, 'players', playerName])		             
 		state = Lobby.login(state, playerName);
 
-		if (state.hasIn(['games', gameIndex, 'submittedPlays'])) {
-			const submittedPlayIndex = state.getIn(['games', gameIndex, 'submittedPlays'])
+		if (state.hasIn(['games', gameName, 'submittedPlays'])) {
+			const submittedPlayIndex = state.getIn(['games', gameName, 'submittedPlays'])
 			                                .findIndex((submittedPlay) => submittedPlay.get('player') === playerName);
 		
 			if (submittedPlayIndex !== -1) {
 				logger.info(`Because player "${playerName}" left game "${gameName}", their submittedPlay was removed.`);
-				state = state.deleteIn(['games', gameIndex, 'submittedPlays', submittedPlayIndex]);
+				state = state.deleteIn(['games', gameName, 'submittedPlays', submittedPlayIndex]);
 			}
 		}
 
-		const players = state.getIn(['games', gameIndex, 'players']).keySeq();
-		if (players.size < 1 || (players.size < 2 && state.getIn(['games', gameIndex, 'started']))) {
+		const players = state.getIn(['games', gameName, 'players']).keySeq();
+		if (players.size < 1 || (players.size < 2 && state.getIn(['games', gameName, 'started']))) {
 			logger.info(`Because player "${playerName}" left game "${gameName}", there were no longer enough players to keep the game going. The game was removed.`);
 			players.forEach(function (player) {
 				state = Lobby.login(state, player);
 			});
-			state = state.deleteIn(['games', gameIndex]);
-		} else if (state.getIn(['games', gameIndex, 'host']) === playerName) {
+			state = state.deleteIn(['games', gameName]);
+		} else if (state.getIn(['games', gameName, 'host']) === playerName) {
 			const newHost = players.get(0);
 			logger.info(`Because player "${playerName}" left game "${gameName}" and was the host, player "${newHost}" was promoted to be host.`)
-			state = state.setIn(['games', gameIndex, 'host'], newHost);
+			state = state.setIn(['games', gameName, 'host'], newHost);
 		}
 
 		return state;
@@ -182,24 +179,22 @@ export default class Game {
 
 	static submitPlay(state, playerName, gameName, cards) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-
-		if (gameIndex === -1) {
+		if (!state.hasIn(['games', gameName])) {
 			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		if (!state.hasIn(['games', gameIndex, 'players', playerName])) {
+		if (!state.hasIn(['games', gameName, 'players', playerName])) {
 			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was not in the game.`);
 			return state;
 		}
 
-		if (state.getIn(['games', gameIndex, 'decider']) === playerName) {
+		if (state.getIn(['games', gameName, 'decider']) === playerName) {
 			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was the decider.`);
 			return state;
 		}
 
-		const playerAlreadySubmitted = state.getIn(['games', gameIndex, 'submittedPlays'])
+		const playerAlreadySubmitted = state.getIn(['games', gameName, 'submittedPlays'])
 			.some((play) => play.get('player') === playerName);
 
 		if (playerAlreadySubmitted) {
@@ -207,7 +202,7 @@ export default class Game {
 			return state;
 		}
 
-		const hand = state.getIn(['games', gameIndex, 'players', playerName, 'hand']);
+		const hand = state.getIn(['games', gameName, 'players', playerName, 'hand']);
 		const cardNotInPlayersHand = cards.some((playCard) => hand.every((handCard) => playCard !== handCard));
 		if (cardNotInPlayersHand) {
 			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they tried to use cards that weren't in their hand.`)
@@ -216,7 +211,7 @@ export default class Game {
 
 		let slotTypeMismatch = false;
 		let tooManyCards = false;
-		let slots = state.getIn(['games', gameIndex, 'current_situation', 'slots']);
+		let slots = state.getIn(['games', gameName, 'current_situation', 'slots']);
 		cards.forEach(function(card) {
 			if (slots.first() !== 'any' && slots.first() !== card.get('type')) {
 				slotTypeMismatch = true;
@@ -250,12 +245,12 @@ export default class Game {
 
 		let typeCount = Map();
 		cards.forEach(function(card, cardIndex) { 
-			state = state.deleteIn(['games', gameIndex, 'players', playerName, 'hand', cardIndex]);
+			state = state.deleteIn(['games', gameName, 'players', playerName, 'hand', cardIndex]);
 			typeCount = typeCount.update(card.get('type'), (count) => count ? count++ : 1);
 		});
 
 		typeCount.forEach((count, cardType) => 
-			state = dealPlayableCards(state, gameIndex, playerName, cardType, count)
+			state = dealPlayableCards(state, gameName, playerName, cardType, count)
 		);
 
 		const play = Map({
@@ -264,26 +259,24 @@ export default class Game {
 		});
 
 		return state.updateIn(
-			['games', gameIndex, 'submittedPlays'], 
+			['games', gameName, 'submittedPlays'], 
 			(submittedPlays) => submittedPlays ? submittedPlays.push(play) : List.of(play)
 		);
 	}
 
 	static decideWinner(state, playerName, gameName, winnerName) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-
-		if (gameIndex === -1) {
+		if (!state.getIn(['games', gameName])) {
 			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		if (playerName !== state.getIn(['games', gameIndex, 'decider'])) {
+		if (playerName !== state.getIn(['games', gameName, 'decider'])) {
 			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the player wasn't the decider.`);
 			return state;
 		}
 
-		const submittedPlayIndex = state.getIn(['games', gameIndex, 'submittedPlays'])
+		const submittedPlayIndex = state.getIn(['games', gameName, 'submittedPlays'])
 		                                .findIndex((play) => play.get('player') === winnerName);
 		
 		if (submittedPlayIndex === -1) {
@@ -291,52 +284,50 @@ export default class Game {
 			return state;
 		}
 
-		const previousScore = state.getIn(['games', gameIndex, 'players', winnerName, 'score']);
-		return state.setIn(['games', gameIndex, 'winnerOfLastRound'], winnerName)
-		            .setIn(['games', gameIndex, 'players', winnerName, 'score'], previousScore + 1);
+		const previousScore = state.getIn(['games', gameName, 'players', winnerName, 'score']);
+		return state.setIn(['games', gameName, 'winnerOfLastRound'], winnerName)
+		            .setIn(['games', gameName, 'players', winnerName, 'score'], previousScore + 1);
 	}
 
 	static nextRound(state, playerName, gameName) {
 
-		const gameIndex = state.get('games').findIndex((game) => game.get('name') === gameName);
-
-		if (gameIndex === -1) {
+		if (!state.getIn(['games', gameName])) {
 			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the game didn't exist.`);
 			return state;
 		}
 
-		if (playerName !== state.getIn(['games', gameIndex, 'host'])) {
+		if (playerName !== state.getIn(['games', gameName, 'host'])) {
 			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the player isn't the host of the game.`);
 			return state;
 		}
 
-		const players = state.getIn(['games', gameIndex, 'players']).keySeq();
-		const currentDecider = state.getIn(['games', gameIndex, 'decider']);
+		const players = state.getIn(['games', gameName, 'players']).keySeq();
+		const currentDecider = state.getIn(['games', gameName, 'decider']);
 		const currentDeciderIndex = players.indexOf(currentDecider);
 		const newDecider = players.get((currentDeciderIndex + 1) % players.size);
-		state = state.setIn(['games', gameIndex, 'decider'], newDecider);
+		state = state.setIn(['games', gameName, 'decider'], newDecider);
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
 			if (!cardType.get('playable')) {
-				state = dealNonPlayableCard(state, gameIndex, cardTypeName);
+				state = dealNonPlayableCard(state, gameName, cardTypeName);
 			}
 		});
 
-		return state.deleteIn(['games', gameIndex, 'submittedPlays']);
+		return state.deleteIn(['games', gameName, 'submittedPlays']);
 	}
 
 }
 
-function dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
+function dealPlayableCards(state, gameName, playerName, cardType, amount) {
 
-	const game = state.getIn(['games', gameIndex]);
+	const game = state.getIn(['games', gameName]);
 	if (!game) {
-		logger.error(`Attempted to deal cards for game with index "${gameIndex}", but no such game exists.`);
+		logger.error(`Attempted to deal cards for game "${gameName}", but no such game exists.`);
 		return state;
 	}
 
 	if (!game.hasIn(['players', playerName])) {
-		logger.error(`Attempted to deal cards to player "${playerName}" in game with index "${gameIndex}", but the player doesn't exist in the game.`);
+		logger.error(`Attempted to deal cards to player "${playerName}" in game "${gameName}", but the player doesn't exist in the game.`);
 		return state;
 	}
 
@@ -349,34 +340,34 @@ function dealPlayableCards(state, gameIndex, playerName, cardType, amount) {
 	if (deck.size < amount) {
 		hand = hand.concat(deck);
 		amount -= deck.size;
-		state = createDeck(state, gameIndex, cardType);
-		deck = state.getIn(['games', gameIndex, 'decks', cardType]);
+		state = createDeck(state, gameName, cardType);
+		deck = state.getIn(['games', gameName, 'decks', cardType]);
 	}
 
 	hand = hand.concat(deck.slice(0, amount));
 	deck = deck.splice(0, amount);
 
-	logger.info(`Successfully dealt ${amount} card(s) of type "${cardType}" to player "${playerName} in game with index "${gameIndex}".`);
-	return state.setIn(['games', gameIndex, 'players', playerName, 'hand'], hand)
-	            .setIn(['games', gameIndex, 'decks', cardType], deck);
+	logger.info(`Successfully dealt ${amount} card(s) of type "${cardType}" to player "${playerName} in game "${gameName}".`);
+	return state.setIn(['games', gameName, 'players', playerName, 'hand'], hand)
+	            .setIn(['games', gameName, 'decks', cardType], deck);
 }
 
-function createDeck(state, gameIndex, cardType) {
+function createDeck(state, gameName, cardType) {
 
-	const game = state.getIn(['games', gameIndex]);
+	const game = state.getIn(['games', gameName]);
 	if (!game) {
-		logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but the game doesn't exist.`);
+		logger.error(`Attempted to create deck with cardType "${cardType}" for game "${gameName}", but the game doesn't exist.`);
 		return state;
 	}
 
 	const newDeck = shuffle(state.get('cards').filter((card) => card.get('type') === cardType));
 	if (!newDeck.size) {
-		logger.error(`Attempted to create deck with cardType "${cardType}" for game with index "${gameIndex}", but no cards were put into the deck.`);
+		logger.error(`Attempted to create deck with cardType "${cardType}" for game "${gameName}", but no cards were put into the deck.`);
 		return state;
 	}
 
-	logger.info(`Successfully created deck with cardType "${cardType}" for game with index "${gameIndex}".`);
-	return state.setIn(['games', gameIndex, 'decks', cardType], newDeck);
+	logger.info(`Successfully created deck with cardType "${cardType}" for game "${gameName}".`);
+	return state.setIn(['games', gameName, 'decks', cardType], newDeck);
 }
 
 function shuffle(deck) {
@@ -394,11 +385,11 @@ function shuffle(deck) {
 	return fromJS(deck);
 }
 
-function dealNonPlayableCard(state, gameIndex, cardType) {
+function dealNonPlayableCard(state, gameName, cardType) {
 
-	const game = state.getIn(['games', gameIndex]);
+	const game = state.getIn(['games', gameName]);
 	if (!game) {
-		logger.error(`Attempted to deal a nonplayable card for game with index "${gameIndex}", but no such game exists.`);
+		logger.error(`Attempted to deal a nonplayable card for game "${gameName}", but no such game exists.`);
 		return state;
 	}
 
@@ -409,12 +400,12 @@ function dealNonPlayableCard(state, gameIndex, cardType) {
 
 	let deck = game.getIn(['decks', cardType]);
 	if (!deck || deck.size === 0) {
-		state = createDeck(state, gameIndex, cardType);
-		deck = state.getIn(['games', gameIndex, 'decks', cardType]);
+		state = createDeck(state, gameName, cardType);
+		deck = state.getIn(['games', gameName, 'decks', cardType]);
 	}
 
 	const card = deck.first();
-	state = state.setIn(['games', gameIndex, 'decks', cardType], deck.shift());
+	state = state.setIn(['games', gameName, 'decks', cardType], deck.shift());
 
-	return state.setIn(['games', gameIndex, 'current_' + cardType], card);
+	return state.setIn(['games', gameName, 'current_' + cardType], card);
 }
