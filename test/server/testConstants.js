@@ -219,3 +219,4 @@ export const exampleStartedGameWithDepletedDecks = fromJS({
 		situation: []
 	}
 });
+export const exampleSockId = 'af8f7ce1087395';
