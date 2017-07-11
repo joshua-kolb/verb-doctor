@@ -23,6 +23,25 @@ export default class Lobby {
 	}
 
 	static login(state, player) {
+
+		let playerExistsInSomeGame = false;
+
+		if (state.has('games')) {
+			state.get('games').keySeq().forEach((gameName) => {
+				logger.info(`game: ${gameName}`);
+				state.getIn(['games', gameName, 'players']).keySeq().forEach((gamePlayer) => {
+					logger.info(`player: ${player}, gamePlayer: ${gamePlayer}`);
+					if (player === gamePlayer) {
+						playerExistsInSomeGame = true;
+					}
+				});
+			});
+		}
+
+		if (playerExistsInSomeGame) {
+			throw new Error(`Attempted to add player "${player}" to the lobby, but the player exists in some game.`)
+		}
+
 		if (!state.has('lobby')) {
 			logger.info(`Successfully added player "${player}" to the lobby (created new lobby).`);
 			return state.set('lobby', List.of(player));

@@ -134,7 +134,7 @@ export default class Game {
 		}
 
 		logger.info(`Player "${playerName}" has successfully left game "${gameName}"`);
-		state = state.deleteIn(['games', gameName, 'players', playerName])		             
+		state = state.deleteIn(['games', gameName, 'players', playerName]);		             
 		state = Lobby.login(state, playerName);
 
 		if (state.hasIn(['games', gameName, 'submittedPlays'])) {
@@ -151,6 +151,7 @@ export default class Game {
 		if (players.size < 1 || (players.size < 2 && state.getIn(['games', gameName, 'started']))) {
 			logger.info(`Because player "${playerName}" left game "${gameName}", there were no longer enough players to keep the game going. The game was removed.`);
 			players.forEach(function (player) {
+				state = state.deleteIn(['games', gameName, 'players', player]);
 				state = Lobby.login(state, player);
 			});
 			state = state.deleteIn(['games', gameName]);

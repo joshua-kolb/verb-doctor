@@ -7,7 +7,8 @@ import {
 	exampleCardTypes,
 	exampleCards,
 	exampleLonePlayer,
-	examplePlayers
+	examplePlayers,
+	exampleNewGameReadyToStart
 } from '../testConstants';
 import Lobby from '../../../src/server/core/Lobby';
 
@@ -68,11 +69,21 @@ describe('core lobby logic', function () {
 			}));
 		});
 
-		it('throws an error when a login already exists', function () {
+		it('throws an error when a login already exists in the lobby', function () {
 			const state = Map({
 				lobby: List.of(exampleLonePlayer)
 			});
 			expect(() => Lobby.login(state, exampleLonePlayer)).to.throw();
+		});
+
+		it('throws an error when a login already exists in a game', function () {
+			const state = Map({
+				games: Map({
+					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart 
+				})
+			});
+			const existingPlayer = exampleNewGameReadyToStart.get('players').keySeq().get(1);
+			expect(() => Lobby.login(state, existingPlayer)).to.throw();
 		});
 
 	});
