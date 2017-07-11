@@ -22,12 +22,11 @@ describe('core lobby logic', function () {
 			}));
 		});
 
-		it('requires that the cardTypes each have playable set to true or false', function () {
-			const nextState = Lobby.setCardTypes(emptyState, Map({ 
+		it('throws an error if a cardType doesn\'t have playable set to true or false', function () {
+			expect(() => Lobby.setCardTypes(emptyState, Map({ 
 				noun: Map({ playable: 52 }), 
 				verb: Map({ fake: true }) 
-			}));
-			expect(nextState).to.equal(emptyState);
+			}))).to.throw();
 		});
 
 	});

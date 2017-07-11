@@ -9,9 +9,7 @@ export default class Game {
 	static create(state, hostPlayerName, gameName, password) {
 
 		if (!state.get('lobby') || !state.get('lobby').includes(hostPlayerName)) {
-			// If host isn't in the lobby, then don't alter the state
-			logger.warn(`Player "${hostPlayerName}" tried to create the game "${gameName}", but was not found in the lobby.`);
-			return state;
+			throw new Error(`Player "${hostPlayerName}" tried to create the game "${gameName}", but was not found in the lobby.`);
 		}
 
 		let newGame = fromJS({
@@ -36,9 +34,7 @@ export default class Game {
 		}
 
 		if(state.get('games').some((game) => game.get('name') === newGame.get('name'))) {
-			// If game name is already taken, then don't alter the state
-			logger.warn(`Player "${hostPlayerName}" tried to create the game "${gameName}", but the game name was already taken.`);
-			return state;
+			throw new Error(`Player "${hostPlayerName}" tried to create the game "${gameName}", but the game name was already taken.`);
 		}
 
 		logger.info(`Player "${hostPlayerName}" successfully created the game "${gameName}" (the new game was added to the list of existing games).`);
@@ -51,23 +47,19 @@ export default class Game {
 		const game = state.getIn(['games', gameName]);
 
 		if (!game) {
-			logger.warn(`Player "${playerName}" attempted to join game "${gameName}", but no such game was found.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to join game "${gameName}", but no such game was found.`);
 		}
 
 		if (game.get('password') !== password) {
-			logger.warn(`Player "${playerName}" attempted to join game "${gameName}", but the password entered was incorrect.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to join game "${gameName}", but the password entered was incorrect.`);
 		}
 
 		if (game.hasIn(['players', playerName])) {
-			logger.warn(`Player "${playerName}" attempted to join game "${gameName}", but is already apart of the game.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to join game "${gameName}", but is already apart of the game.`);
 		}
 
 		if (!state.get('lobby').includes(playerName)) {
-			logger.warn(`Player "${playerName}" attempted to join game "${gameName}", but the player doesn't exist in the lobby.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to join game "${gameName}", but the player doesn't exist in the lobby.`);
 		}
 
 		state = Lobby.logout(state, playerName);
@@ -90,24 +82,20 @@ export default class Game {
 	static start(state, playerName, gameName) {
 
 		if (!state.getIn(['games', gameName])) {
-			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't exist.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't exist.`);
 		}
 
 		if (state.getIn(['games', gameName, 'started'])) {
-			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game is already started.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to start game "${gameName}", but the game is already started.`);
 		}
 
 		if (state.getIn(['games', gameName, 'host']) !== playerName) {
-			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but they are not the host.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to start game "${gameName}", but they are not the host.`);
 		}
 
 		const players = state.getIn(['games', gameName, 'players']);
 		if (players.keySeq().size < 2) {
-			logger.warn(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't have enough players.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to start game "${gameName}", but the game didn't have enough players.`);
 		}
 
 		state.get('cardTypes').forEach(function(cardType, cardTypeName) {
@@ -138,13 +126,11 @@ export default class Game {
 	static leave(state, playerName, gameName) {
 
 		if (!state.hasIn(['games', gameName])) {
-			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but the game didn't exist.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to leave game "${gameName}", but the game didn't exist.`);
 		}
 
 		if (!state.hasIn(['games', gameName, 'players', playerName])) {
-			logger.warn(`Player "${playerName}" attempted to leave game "${gameName}", but was not in the game to begin with.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to leave game "${gameName}", but was not in the game to begin with.`);
 		}
 
 		logger.info(`Player "${playerName}" has successfully left game "${gameName}"`);
@@ -180,33 +166,28 @@ export default class Game {
 	static submitPlay(state, playerName, gameName, cards) {
 
 		if (!state.hasIn(['games', gameName])) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but the game didn't exist.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but the game didn't exist.`);
 		}
 
 		if (!state.hasIn(['games', gameName, 'players', playerName])) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was not in the game.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was not in the game.`);
 		}
 
 		if (state.getIn(['games', gameName, 'decider']) === playerName) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was the decider.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but was the decider.`);
 		}
 
 		const playerAlreadySubmitted = state.getIn(['games', gameName, 'submittedPlays'])
 			.some((play) => play.get('player') === playerName);
 
 		if (playerAlreadySubmitted) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they had already submitted one before.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they had already submitted one before.`);
 		}
 
 		const hand = state.getIn(['games', gameName, 'players', playerName, 'hand']);
 		const cardNotInPlayersHand = cards.some((playCard) => hand.every((handCard) => playCard !== handCard));
 		if (cardNotInPlayersHand) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they tried to use cards that weren't in their hand.`)
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but they tried to use cards that weren't in their hand.`)
 		}
 
 		let slotTypeMismatch = false;
@@ -229,18 +210,15 @@ export default class Game {
 		});
 
 		if (slotTypeMismatch) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there was a slot type mismatch.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there was a slot type mismatch.`);
 		}
 
 		if (tooManyCards) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but not all slots were filled.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but not all slots were filled.`);
 		}
 
 		if (slots.size !== 0) {
-			logger.warn(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there were too many cards submitted.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to submit a play in game "${gameName}", but there were too many cards submitted.`);
 		}
 
 		let typeCount = Map();
@@ -267,21 +245,18 @@ export default class Game {
 	static decideWinner(state, playerName, gameName, winnerName) {
 
 		if (!state.getIn(['games', gameName])) {
-			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the game didn't exist.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the game didn't exist.`);
 		}
 
 		if (playerName !== state.getIn(['games', gameName, 'decider'])) {
-			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the player wasn't the decider.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to decide the winner in game "${gameName}", but the player wasn't the decider.`);
 		}
 
 		const submittedPlayIndex = state.getIn(['games', gameName, 'submittedPlays'])
 		                                .findIndex((play) => play.get('player') === winnerName);
 		
 		if (submittedPlayIndex === -1) {
-			logger.warn(`Player "${playerName}" attempted to decide the winner in game "${gameName}" to be player "${winnerName}", but player "${winnerName}" never submitted a play.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to decide the winner in game "${gameName}" to be player "${winnerName}", but player "${winnerName}" never submitted a play.`);
 		}
 
 		const previousScore = state.getIn(['games', gameName, 'players', winnerName, 'score']);
@@ -292,13 +267,11 @@ export default class Game {
 	static nextRound(state, playerName, gameName) {
 
 		if (!state.getIn(['games', gameName])) {
-			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the game didn't exist.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the game didn't exist.`);
 		}
 
 		if (playerName !== state.getIn(['games', gameName, 'host'])) {
-			logger.warn(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the player isn't the host of the game.`);
-			return state;
+			throw new Error(`Player "${playerName}" attempted to go to the next round in game "${gameName}", but the player isn't the host of the game.`);
 		}
 
 		const players = state.getIn(['games', gameName, 'players']).keySeq();

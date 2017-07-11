@@ -576,9 +576,8 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
 		it('throws an error if a player tries to submit a play and they already have submitted a play', function () {
@@ -638,7 +637,7 @@ describe('core game logic', function () {
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleCards.get(expectedNounsInHand));
 			
-			expect(Game.submitPlay(state, playerName, gameName, play)).to.throw();
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
 		it('throws an error if the player isn\'t in the game', function () {

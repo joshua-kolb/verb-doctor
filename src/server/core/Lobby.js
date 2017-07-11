@@ -10,8 +10,7 @@ export default class Lobby {
 			cardType.get('playable') !== true && cardType.get('playable') !== false);
 		
 		if (isInvalid) {
-			logger.warn(`Attempted to set cardTypes to ${cardTypes}, but not every type had a field 'playable' set to either true or false.`);
-			return state;
+			throw new Error(`Attempted to set cardTypes to ${cardTypes}, but not every type had a field 'playable' set to either true or false.`);
 		}
 
 		logger.info(`Successfully set cardTypes to ${cardTypes}`);
@@ -30,8 +29,7 @@ export default class Lobby {
 		}
 
 		if (state.get('lobby').includes(player)) {
-			logger.info(`Attempted to add player "${player}" to the lobby, but the player name was already taken.`);
-			return state;
+			throw new Error(`Attempted to add player "${player}" to the lobby, but the player name was already taken.`);
 		}
 		
 		logger.info(`Successfully added player "${player}" to the lobby.`)
@@ -42,8 +40,7 @@ export default class Lobby {
 		const playerIndex = state.get('lobby').indexOf(player);
 
 		if (playerIndex === -1) {
-			logger.warn(`Attempted to log out player "${player}", but the player didn't exist in the lobby.`);
-			return state;
+			throw new Error(`Attempted to log out player "${player}", but the player didn't exist in the lobby.`);
 		}
 
 		if (state.get('lobby').size === 1) {
