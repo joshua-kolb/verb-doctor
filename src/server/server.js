@@ -1,4 +1,5 @@
 import {Server as WebSocketServer} from 'uws';
+import generateGuid from 'uuid/v4';
 import {createStore, applyMiddleware} from 'redux';
 import logger from 'winston';
 import reducer from './redux/reducer';
@@ -11,24 +12,22 @@ export default class Server {
 
 	constructor(httpServer) {
 		this.clients = [];
-		this.store = createStore(reducer(this.broadcast, this.emitToPlayer, this.emitToGame));
+		this.store = createStore(reducer(this.emit, this.setSocketProp));
 		this.webSocketServer = new WebSocketServer({ server: httpServer });
 		this.webSocketServer.on('connection', onWebSocketConnection);
 
 		store.dispatch(Actions.setCardTypes());
 		store.dispatch(Actions.setCards());
-
-		store.subscribe(function () {
-
-		});
 	}
 
 	onWebSocketConnection(socket) {
+		socket.id = generateGuid();
 		this.clients.push(socket);
 		socket.on('message', function (message) {
 			const action = JSON.parse(message)
 			action.meta = {
 				remote: true,
+				sockId: socket.id,
 				player: socket.player,
 				game: socket.game
 			};
@@ -39,19 +38,15 @@ export default class Server {
 		});
 	}
 
-	broadcast(action) {
-		this.clients.forEach((socket) => socket.send(action));
-	}
-
-	emitToPlayer(playerName, action) {
-		this.clients.find((socket) => socket.player === playerName).send(action);
-	}
-
-	emitToGame(gameName, action) {
+	emit(action, propName, propValue) {
 		this.clients.forEach((socket) => {
-			if (socket.game === gameName) {
+			if (!propName || socket[propName] === propValue) {
 				socket.send(action);
 			}
 		});
+	}
+
+	setSocketProp(sockId, propName, propValue) {
+		this.clients.find((socket) => socket.id === sockId)[propName] = propValue;
 	}
 }
