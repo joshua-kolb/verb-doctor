@@ -70,34 +70,21 @@ describe('core game logic', function () {
 			}));
 		});
 
-		it('doesn\'t add a game to the state when the name is already taken', function () {
+		it('throws an error when the name is already taken', function () {
 			const state = Map({
 				games: Map({
 					[exampleNewGame.get('name')]: exampleNewGame
 				}),
 				lobby: List.of(exampleNewGame.get('host'))
 			});
-			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
-			expect(nextState.get('games')).to.equal(state.get('games'));
+			expect(() => Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'))).to.throw();
 		});
 
-		it('doesn\'t remove the player from the lobby state when the game doesn\'t get created', function () {
-			const state = Map({
-				games: Map({
-					[exampleNewGame.get('name')]: exampleNewGame
-				}),
-				lobby: List.of(exampleNewGame.get('host'))
-			});
-			const nextState = Game.create(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
-			expect(nextState.get('lobby')).to.equal(state.get('lobby'));
-		});
-
-		it('doesn\'t add a game to the state when the new host isn\'t in the lobby', function () {
+		it('throws an error when the new host isn\'t in the lobby', function () {
 			const state = Map({
 				lobby: examplePlayers
 			});
-			const nextState = Game.create(emptyState, exampleLonePlayer, exampleNewGame.get('name'));
-			expect(nextState.get('games')).to.be.undefined;
+			expect(() => Game.create(emptyState, exampleLonePlayer, exampleNewGame.get('name'))).to.throw();
 		});
 
 	});
@@ -159,29 +146,27 @@ describe('core game logic', function () {
 			expect(nextState.get('lobby')).to.equal(examplePlayers);
 		});
 
-		it('doesn\'t add a player to the game if the game does\'t exist', function () {
+		it('throws an error if the game does\'t exist', function () {
 			const state = Map({
 				games: Map({
 					[exampleNewGame.get('name')]: exampleNewGame
 				}),
 				lobby: List.of(...examplePlayers)
 			});
-			const nextState = Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'));
-			expect(nextState).to.equal(state);
+			expect(() => Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'))).to.throw();
 		});
 
-		it('doesn\'t add a player to the game if the game has a password and the user didn\'t get it right', function () {
+		it('throws an error if the game has a password and the user didn\'t get it right', function () {
 			const state = Map({
 				games: Map({
 					[exampleNewGameWithPassword.get('name')]: exampleNewGameWithPassword
 				}),
 				lobby: List.of(...examplePlayers, exampleLonePlayer)
 			});
-			const nextState = Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'));
-			expect(nextState).to.equal(state);
+			expect(() => Game.join(state, exampleLonePlayer, exampleNewGameWithPassword.get('name'))).to.throw();
 		});
 
-		it('doesn\'t add a player to the game if they are already in the game', function () {
+		it('throws an error if they are already in the game', function () {
 			const player = exampleNewGame.get('players').keySeq().first();
 			const state = Map({
 				games: Map({
@@ -189,19 +174,17 @@ describe('core game logic', function () {
 				}),
 				lobby: List.of(...examplePlayers, player)
 			});
-			const nextState = Game.join(state, player, exampleNewGame.get('name'));
-			expect(nextState).to.equal(state);
+			expect(() => Game.join(state, player, exampleNewGame.get('name'))).to.throw();
 		});
 
-		it('doesn\'t add a player to the game if they don\'t exist in the lobby state', function () {
+		it('throws an error if they don\'t exist in the lobby state', function () {
 			const state = Map({
 				games: Map({
 					[exampleNewGame.get('name')]: exampleNewGame
 				}),
 				lobby: List.of(...examplePlayers)
 			});
-			const nextState = Game.join(state, exampleLonePlayer, exampleNewGame.get('name'));
-			expect(nextState).to.equal(state);
+			expect(() => Game.join(state, exampleLonePlayer, exampleNewGame.get('name'))).to.throw();
 		});
 
 	});
@@ -347,7 +330,7 @@ describe('core game logic', function () {
 			expect(nextState.getIn(['games', exampleNewGameReadyToStart.get('name'), 'decider'])).to.not.be.undefined;
 		});
 
-		it('doesn\'t start the game if there is only one player', function () {
+		it('throws an error if there is only one player', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -355,11 +338,10 @@ describe('core game logic', function () {
 					[exampleNewGame.get('name')]: exampleNewGame
 				})
 			});
-			const nextState = Game.start(state, exampleNewGame.get('host'), exampleNewGame.get('name'));
-			expect(nextState).to.equal(state);
+			expect(() => Game.start(state, exampleNewGame.get('host'), exampleNewGame.get('name'))).to.throw();
 		});
 
-		it('only allows the host to start the game', function () {
+		it('throws an error if a player other than the host tries to start the game', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -367,15 +349,14 @@ describe('core game logic', function () {
 					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
 				})
 			});
-			const nextState = Game.start(
+			expect(() => Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('players').keySeq().get(1), 
 				exampleNewGameReadyToStart.get('name')
-			);
-			expect(nextState).to.equal(state);
+			)).to.throw();
 		});
 
-		it('doesn\'t alter the state if the game doesn\'t exist', function () {
+		it('throws an error if the game doesn\'t exist', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -383,15 +364,14 @@ describe('core game logic', function () {
 					[exampleNewGameReadyToStart.get('name')]: exampleNewGameReadyToStart
 				})
 			});
-			const nextState = Game.start(
+			expect(() => Game.start(
 				state, 
 				exampleNewGameReadyToStart.get('host'), 
 				exampleNewGameReadyToStart.get('name') + 'DIFFERENT'
-			);
-			expect(nextState).to.equal(state);
+			)).to.throw();
 		});
 
-		it('doesn\'t alter the state if the game is already started', function () {
+		it('throws an error if the game is already started', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -399,12 +379,11 @@ describe('core game logic', function () {
 					[exampleStartedGame.get('name')]: exampleStartedGame
 				})
 			});
-			const nextState = Game.start(
+			expect(() => Game.start(
 				state, 
 				exampleStartedGame.get('host'), 
 				exampleStartedGame.get('name')
-			);
-			expect(nextState).to.equal(state);
+			)).to.throw();
 		});
 
 	});
@@ -497,32 +476,30 @@ describe('core game logic', function () {
 			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'submittedPlays']).size).to.equal(0);
 		});
 
-		it('doesn\'t do anything if the player isn\'t in the game', function () {
+		it('throws an error if the player isn\'t in the game', function () {
 			const state = Map({
 				games: Map({
 					[exampleStartedGame.get('name')]: exampleStartedGame
 				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1) + 'DIFFERENT';
-			const nextState = Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'));
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.leave(state, leavingPlayerName, exampleStartedGame.get('name'))).to.throw();
 		});
 
-		it('doesn\'t do anything if the game doesn\'t exist', function () {
+		it('throws an error if the game doesn\'t exist', function () {
 			const state = Map({
 				games: Map({
 					[exampleStartedGame.get('name')]: exampleStartedGame
 				})
 			});
 			const leavingPlayerName = exampleStartedGame.get('players').keySeq().get(1);
-			const nextState = Game.leave(
+			
+			expect(() => Game.leave(
 				state, 
 				leavingPlayerName, 
 				exampleStartedGame.get('name') + 'DIFFERENT'
-			);
-
-			expect(nextState).to.equal(state);
+			)).to.throw();
 		});
 
 	});
@@ -588,7 +565,7 @@ describe('core game logic', function () {
 			expect(newDeck.size).to.equal(exampleCardsByType.get(cardType).size - 1);
 		});
 
-		it('doesn\'t allow the decider to submit a play', function () {
+		it('throws an error if the decider submits a play', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -604,7 +581,7 @@ describe('core game logic', function () {
 			expect(nextState).to.equal(state);
 		});
 
-		it('doesn\'t allow a player to submit a play if they already have', function () {
+		it('throws an error if a player tries to submit a play and they already have submitted a play', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -615,12 +592,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.getIn(['submittedPlays', exampleStartedGame.get('name'), 'player']);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
-		it('doesn\'t allow a simple play that doesn\'t fill all card slots', function () {
+		it('throws an error when given a simple play that doesn\'t fill all card slots', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -631,12 +607,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', expectedNounsInHand]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
-		it('doesn\'t allow a play with chainer cards that doesn\'t fill all card slots', function () {
+		it('throws an error when given a play with chainer cards that doesn\'t fill all card slots', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -647,12 +622,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 2]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
-		it('doesn\'t allow a play that includes cards that aren\'t in the player\'s hand', function () {
+		it('throws an error when given a play that includes cards that aren\'t in the player\'s hand', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -663,12 +637,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleCards.get(expectedNounsInHand));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
-
-			expect(nextState).to.equal(state);
+			
+			expect(Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
-		it('doesn\'t do anything if the player isn\'t in the game', function () {
+		it('throws an error if the player isn\'t in the game', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -679,12 +652,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2) + 'DIFFERENT';
 			const gameName = exampleStartedGame.get('name');
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
-		it('doesn\'t do anything if the game doesn\'t exist', function () {
+		it('throws an error if the game doesn\'t exist', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -695,9 +667,8 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
 			const play = List.of(exampleStartedGame.getIn(['players', playerName, 'hand', 0]));
-			const nextState = Game.submitPlay(state, playerName, gameName, play);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.submitPlay(state, playerName, gameName, play)).to.throw();
 		});
 
 	});
@@ -733,7 +704,7 @@ describe('core game logic', function () {
 			expect(nextState.getIn(['games', exampleStartedGame.get('name'), 'players', winnerName, 'score'])).to.equal(originalScore + 1);
 		});
 
-		it('doesn\'t allow a player who is not the decider to decide', function () {
+		it('throws an error when a player who is not the decider tries to decide', function () {
 			const state = Map({
 				games: Map({
 					[exampleStartedGame.get('name')]: exampleStartedGame
@@ -742,12 +713,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('players').keySeq().get(2);
 			const gameName = exampleStartedGame.get('name');
 			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
-			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.decideWinner(state, playerName, gameName, winnerName)).to.throw();
 		});
 
-		it('doesn\'t allow the winner to be decided when they have not submitted a play', function () {
+		it('throws an error when the winner has not submitted a play', function () {
 			const state = Map({
 				games: Map({
 					[exampleStartedGame.get('name')]: exampleStartedGame
@@ -756,12 +726,11 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name');
 			const winnerName = exampleStartedGame.get('players').keySeq().get(2);
-			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.decideWinner(state, playerName, gameName, winnerName)).to.throw();
 		});
 
-		it('doesn\'t do anything if the game doesn\'t exist.', function () {
+		it('throws an error if the game doesn\'t exist.', function () {
 			const state = Map({
 				games: Map({
 					[exampleStartedGame.get('name')]: exampleStartedGame
@@ -770,9 +739,8 @@ describe('core game logic', function () {
 			const playerName = exampleStartedGame.get('decider');
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
 			const winnerName = exampleStartedGame.getIn(['submittedPlays', 0, 'player']);
-			const nextState = Game.decideWinner(state, playerName, gameName, winnerName);
 
-			expect(nextState).to.equal(state);
+			expect(() => Game.decideWinner(state, playerName, gameName, winnerName)).to.throw();
 		});
 
 	});
@@ -847,7 +815,7 @@ describe('core game logic', function () {
 			expect(nextState.hasIn(['games', exampleStartedGame.get('name'), 'submittedPlays'])).to.equal(false);
 		});
 
-		it('doesn\'t allow someone who isn\'t the game host to call the next round', function () {
+		it('throws an error if someone who isn\'t the game host tries to call the next round', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -857,12 +825,11 @@ describe('core game logic', function () {
 			})
 			const playerName = exampleStartedGame.get('host') + 'DIFFERENT';
 			const gameName = exampleStartedGame.get('name');
-			const nextState = Game.nextRound(state, playerName, gameName);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.nextRound(state, playerName, gameName)).to.throw();
 		});
 
-		it('doesn\'t do anything if the game doesn\'t exist.', function () {
+		it('throws an error if the game doesn\'t exist.', function () {
 			const state = Map({
 				cardTypes: exampleCardTypes,
 				cards: exampleCards,
@@ -872,9 +839,8 @@ describe('core game logic', function () {
 			})
 			const playerName = exampleStartedGame.get('host');
 			const gameName = exampleStartedGame.get('name') + 'DIFFERENT';
-			const nextState = Game.nextRound(state, playerName, gameName);
-
-			expect(nextState).to.equal(state);
+			
+			expect(() => Game.nextRound(state, playerName, gameName)).to.throw();
 		});
 
 	});

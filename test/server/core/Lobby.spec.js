@@ -69,12 +69,11 @@ describe('core lobby logic', function () {
 			}));
 		});
 
-		it('doesn\'t allow duplicate player login names', function () {
+		it('throws an error when a login already exists', function () {
 			const state = Map({
 				lobby: List.of(exampleLonePlayer)
 			});
-			const nextState = Lobby.login(state, exampleLonePlayer);
-			expect(nextState).to.equal(state);
+			expect(() => Lobby.login(state, exampleLonePlayer)).to.throw();
 		});
 
 	});
@@ -99,12 +98,11 @@ describe('core lobby logic', function () {
 			expect(nextState).to.equal(emptyState);
 		});
 
-		it('doesn\'t do anything if the player isn\'t in the state', function () {
+		it('throws an error if the player isn\'t in the state', function () {
 			const state = Map({
 				lobby: examplePlayers
 			});
-			const nextState = Lobby.logout(state, exampleLonePlayer);
-			expect(nextState).to.equal(state);
+			expect(() => Lobby.logout(state, exampleLonePlayer)).to.throw();
 		});
 
 	});
