@@ -4,7 +4,6 @@ import logger from 'winston';
 export default class Lobby {
 
 	static setCardTypes(state, cardTypes) {
-		logger.info(`asdf: ${cardTypes}`);
 		cardTypes = fromJS(cardTypes);
 		const isInvalid = cardTypes.some((cardType, name) => 
 			cardType.get('playable') !== true && cardType.get('playable') !== false);

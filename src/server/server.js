@@ -14,10 +14,10 @@ export default class Server {
 		this.clients = [];
 		this.store = createStore(reducer(this.emit, this.setSocketProp));
 		this.webSocketServer = new WebSocketServer({ server: httpServer });
-		this.webSocketServer.on('connection', onWebSocketConnection);
+		this.webSocketServer.on('connection', this.onWebSocketConnection);
 
-		store.dispatch(Actions.setCardTypes());
-		store.dispatch(Actions.setCards());
+		this.store.dispatch(Actions.setCardTypes(cardTypes));
+		this.store.dispatch(Actions.setCards(cards));
 	}
 
 	onWebSocketConnection(socket) {
@@ -31,7 +31,7 @@ export default class Server {
 				player: socket.player,
 				game: socket.game
 			};
-			store.dispatch(action);
+			this.store.dispatch(action);
 		});
 		socket.on('disconnect', function () {
 			this.clients.splice(this.clients.indexOf(socket), 1);
@@ -41,7 +41,7 @@ export default class Server {
 	emit(action, propName, propValue) {
 		this.clients.forEach((socket) => {
 			if (!propName || socket[propName] === propValue) {
-				socket.send(action);
+				socket.send(JSON.stringify(action));
 			}
 		});
 	}
