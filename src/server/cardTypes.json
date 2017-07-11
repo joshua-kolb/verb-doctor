@@ -1,0 +1,11 @@
+{
+	"noun": {
+		"playable": true
+	},
+	"verb": {
+		"playable": true
+	},
+	"situation": {
+		"playable": false
+	}
+}
