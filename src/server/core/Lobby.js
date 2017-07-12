@@ -50,7 +50,7 @@ export default class Lobby {
 			throw new Error(`Attempted to add player "${player}" to the lobby, but the player name was already taken.`);
 		}
 		
-		logger.info(`Successfully added player "${player}" to the lobby.`)
+		logger.info(`Successfully added player "${player}" to the lobby.`);
 		return state.update('lobby', (lobby) => lobby.push(player));
 	}
 

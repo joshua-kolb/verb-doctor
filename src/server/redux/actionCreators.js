@@ -29,15 +29,17 @@ export default class Actions {
 	// Only dispatched to the client reducer
 	static setLobbyGames(games) {
 		let result = List();
-		games.keySeq().forEach((gameName) => {
-			result = result.push(Map({
-				name: gameName,
-				started: games.getIn([gameName, 'started']),
-				host: games.getIn([gameName, 'host']),
-				players: games.getIn([gameName, 'players']).keySeq(),
-				hasPassword: games.hasIn([gameName, 'password'])
-			}));
-		});
+		if (games) {
+			games.keySeq().forEach((gameName) => {
+				result = result.push(Map({
+					name: gameName,
+					started: games.getIn([gameName, 'started']),
+					host: games.getIn([gameName, 'host']),
+					players: games.getIn([gameName, 'players']).keySeq(),
+					hasPassword: games.hasIn([gameName, 'password'])
+				}));
+			});
+		}
 
 		return {
 			type: 'SET_LOBBY_GAMES',

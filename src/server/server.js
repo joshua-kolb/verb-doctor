@@ -11,6 +11,11 @@ import cards from './cards';
 export default class Server {
 
 	constructor(httpServer) {
+
+		this.onWebSocketConnection = this.onWebSocketConnection.bind(this);
+		this.emit = this.emit.bind(this);
+		this.setSocketProp = this.setSocketProp.bind(this);
+
 		this.clients = [];
 		this.store = createStore(reducer(this.emit, this.setSocketProp));
 		this.webSocketServer = new WebSocketServer({ server: httpServer });
@@ -23,7 +28,7 @@ export default class Server {
 	onWebSocketConnection(socket) {
 		socket.id = generateGuid();
 		this.clients.push(socket);
-		socket.on('message', function (message) {
+		socket.on('message', (message) => {
 			const action = JSON.parse(message)
 			action.meta = {
 				remote: true,
@@ -33,7 +38,7 @@ export default class Server {
 			};
 			this.store.dispatch(action);
 		});
-		socket.on('disconnect', function () {
+		socket.on('disconnect', () => {
 			this.clients.splice(this.clients.indexOf(socket), 1);
 		});
 	}

@@ -88,7 +88,7 @@ export default function reducer(emit, setSocketProp) {
 					throw new Error(`Unsupported action type: "${action.type}"`);
 			}
 		} catch (exception) {
-			logger.warn(`Error encountered when trying to service action (${JSON.stringify(action)}): "${exception.message}"`);
+			logger.warn(`Error encountered when trying to service action (${JSON.stringify(action)}): "${exception}"`);
 			
 			if (action.meta && action.meta.player) {
 				emit(Actions.error(exception.message), PLAYER_PROP_NAME, action.meta.player);
