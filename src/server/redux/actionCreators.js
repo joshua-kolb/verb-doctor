@@ -1,5 +1,3 @@
-import {List} from 'immutable';
-
 export default class Actions {
 
 	// Only dispatched to the server reducer
@@ -28,16 +26,16 @@ export default class Actions {
 
 	// Only dispatched to the client reducer
 	static setLobbyGames(games) {
-		let result = List();
+		let result = [];
 		if (games) {
 			games.keySeq().forEach((gameName) => {
-				result = result.push(Map({
+				result = result.push({
 					name: gameName,
 					started: games.getIn([gameName, 'started']),
 					host: games.getIn([gameName, 'host']),
 					players: games.getIn([gameName, 'players']).keySeq(),
 					hasPassword: games.hasIn([gameName, 'password'])
-				}));
+				});
 			});
 		}
 

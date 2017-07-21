@@ -11,7 +11,6 @@ import cards from './cards';
 export default class Server {
 
 	constructor(httpServer) {
-
 		this.onWebSocketConnection = this.onWebSocketConnection.bind(this);
 		this.emit = this.emit.bind(this);
 		this.setSocketProp = this.setSocketProp.bind(this);

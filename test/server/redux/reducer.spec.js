@@ -521,7 +521,7 @@ describe('server reducer', function () {
 			};
 			const nextState = reducer(emitSpy, emptyFunction)(initialState, action);
 
-			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.gameName]));
+			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.meta.game]));
 			expect(emitSpy.calledOnce).to.equal(true);
 			expect(emitSpy.calledWithExactly(setCurrentGameAction, GAME_PROP_NAME, action.meta.game)).to.equal(true);
 		});
@@ -574,7 +574,7 @@ describe('server reducer', function () {
 			};
 			const nextState = reducer(emitSpy, emptyFunction)(initialState, action);
 
-			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.gameName]));
+			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.meta.game]));
 			expect(emitSpy.calledOnce).to.equal(true);
 			expect(emitSpy.calledWithExactly(setCurrentGameAction, GAME_PROP_NAME, action.meta.game)).to.equal(true);
 		});
@@ -627,7 +627,7 @@ describe('server reducer', function () {
 			};
 			const nextState = reducer(emitSpy, emptyFunction)(initialState, action);
 
-			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.gameName]));
+			const setCurrentGameAction = Actions.setCurrentGame(nextState.getIn(['games', action.meta.game]));
 			expect(emitSpy.calledOnce).to.equal(true);
 			expect(emitSpy.calledWithExactly(setCurrentGameAction, GAME_PROP_NAME, action.meta.game)).to.equal(true);
 		});
