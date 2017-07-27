@@ -1,28 +1,23 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import {HashRouter as Router} from 'react-router-dom';
+import {createStore} from 'redux';
+import {Provider} from 'react-redux';
+
+import reducer from './redux/reducer';
+import App from './components/App';
 
 const socket = new WebSocket(`ws://${location.hostname}:${location.port}`);
-socket.onopen = onSocketOpen;
-socket.onmessage = onSocketMessage;
+const store = createStore(reducer(socket.send));
+socket.onmessage = (event) => store.dispatch(JSON.parse(event.data));
 
 ReactDOM.render(
 	(
-		<div>
-			Hello World!
-		</div>
+		<Provider store={store}>
+			<Router>
+				<App/>
+			</Router>
+		</Provider>
 	),
 	document.getElementById('app')
 );
-
-function onSocketOpen(event) {
-	const action = {
-		type: 'LOGIN',
-		player: 'superuser'
-	};
-
-	socket.send(JSON.stringify(action));
-}
-
-function onSocketMessage(event) {
-	console.log(event.data);
-}

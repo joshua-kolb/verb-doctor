@@ -1,0 +1,52 @@
+{
+	"lobbyGames": [{
+		"name": "Super Ready",
+		"started": false,
+		"host": "SpaceGhost",
+		"players": [
+			"SpaceGhost",
+			"BugGuy"
+		],
+		"hasPassword": true
+	},
+	{
+		"name": "Deck Depletion",
+		"started": true,
+		"host": "trashDumper",
+		"players": [
+			"trashDumper",
+			"garbageCollector"
+		],
+		"hasPassword": false
+	}],
+	"currentGame": {
+		"name": "Getting Started",
+		"started": true,
+		"host": "selfStarter",
+		"decider": "selfStarter",
+		"winnerOfLastRound": "selfStarter",
+		"current_situation": {
+
+		},
+		"players": {
+			"selfStarter": {
+				"score": 0
+			},
+			"duoStarter": {
+				"score": 0
+			},
+			"trioStarter": {
+				"score": 0
+			}
+		},
+		"submittedPlays": [{
+			"player": "duoStarter",
+			"cardsSubmitted": [{
+				
+			}]
+		}]
+	},
+	"error": {
+		"message": ""
+	}
+}
