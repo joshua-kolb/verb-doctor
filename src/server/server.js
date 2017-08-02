@@ -28,7 +28,13 @@ export default class Server {
 		socket.id = generateGuid();
 		this.clients.push(socket);
 		socket.on('message', (message) => {
-			const action = JSON.parse(message)
+			let action;
+			try {
+				action = JSON.parse(message);
+			} catch (exception) {
+				logger.error(`Error when trying to parse message "${message}". Exception message: "${exception}"`);
+				return;
+			}
 			action.meta = {
 				remote: true,
 				sockId: socket.id,

@@ -1,6 +1,10 @@
 import React, {Component} from 'React';
+import PropTypes from 'prop-types';
+import PureRenderMixin from 'react-addons-pure-render-mixin';
+import {connect} from 'react-redux';
+import Actions from '../../redux/actionCreators';
 
-export default class extends Component {
+export class Login extends Component {
 
 	constructor(props) {
 		super(props);
@@ -28,3 +32,13 @@ export default class extends Component {
 	}
 
 }
+
+Login.PropTypes = {
+	login: PropTypes.func.isRequired
+};
+Login.mixins = [PureRenderMixin];
+
+export const LoginContainer = connect(
+	undefined,
+	{login: Actions.login}
+)(Login);

@@ -1,12 +1,12 @@
 export default send => (state, action) => {
 	switch (action.type) {
 		case 'SET_LOBBY_GAMES':
-			return;
+			return state.set('lobbyGames');
 
 		case 'SET_CURRENT_GAME':
-			return;
+			return state.set('currentGame');
 
 		case 'ERROR':
-			return;
+			return state.set('error');
 	}
 }

@@ -1,15 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {HashRouter as Router} from 'react-router-dom';
-import {createStore} from 'redux';
 import {Provider} from 'react-redux';
 
-import reducer from './redux/reducer';
+import createCustomStore from './redux/store';
 import App from './components/App';
 
 const socket = new WebSocket(`ws://${location.hostname}:${location.port}`);
-const store = createStore(reducer(socket.send));
-socket.onmessage = (event) => store.dispatch(JSON.parse(event.data));
+const store = createCustomStore(socket.send);
+socket.onmessage = (event) => {
+	const action = JSON.parse(event.data);
+	action.meta.fromServer = true;
+	store.dispatch(action);
+};
 
 ReactDOM.render(
 	(

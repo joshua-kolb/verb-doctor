@@ -3,7 +3,7 @@ import {shallow, mount} from 'enzyme';
 import {expect} from 'chai';
 import {spy} from 'sinon';
 import {emptyFunction} from '../../testConstants';
-import Login from '../../../../src/client/components/Lobby/Login';
+import {Login} from '../../../../src/client/components/Lobby/Login';
 
 describe('Login Component', function () {
 
